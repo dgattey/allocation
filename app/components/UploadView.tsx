@@ -99,7 +99,8 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
               </a>
             </Step>
             <Step number={2}>
-              Click <strong>Download</strong> to export your positions as CSV
+              Open the <strong>...</strong> menu on the right, then click{" "}
+              <strong>Download</strong> to export your positions as CSV
             </Step>
             <Step number={3}>Drop the file below or click to browse</Step>
           </div>
