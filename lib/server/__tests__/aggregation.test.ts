@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computePortfolioData } from "../aggregation";
-import type { FidelityPosition } from "@/lib/types";
+import type { FidelityPosition, FundHolding, QuoteData } from "../../types";
 
 function makePosition(
   overrides: Partial<FidelityPosition> = {}
@@ -81,14 +81,63 @@ describe("computePortfolioData", () => {
     expect(result.tableRows.find((row) => row.symbol === "MSFT")?.totalValue).toBe(
       40
     );
-    expect(result.tableRows.find((row) => row.symbol === "AAPL")?.sources[0]).toMatchObject(
-      {
-        type: "fund",
-        value: 60,
-        percentOfSource: 60,
-        percentOfPortfolio: 60,
-      }
+    expect(
+      result.tableRows.find((row) => row.symbol === "AAPL")?.sources[0]
+    ).toMatchObject({
+      type: "fund",
+      value: 60,
+      percentOfSource: 60,
+      percentOfPortfolio: 60,
+    });
+  });
+
+  it("does not reserve unused header space above top-level treemap nodes", () => {
+    const positions: FidelityPosition[] = [
+      makePosition({
+        investmentType: "ETFs",
+        symbol: "VTI",
+        description: "Vanguard Total Stock Market ETF",
+        currentValue: 600,
+      }),
+      makePosition({
+        investmentType: "Stocks",
+        symbol: "MSFT",
+        description: "Microsoft Corp.",
+        currentValue: 400,
+      }),
+    ];
+
+    const holdings: Record<string, FundHolding[]> = {
+      VTI: [
+        { symbol: "AAPL", holdingName: "Apple Inc.", holdingPercent: 0.6 },
+        { symbol: "NVDA", holdingName: "NVIDIA Corp.", holdingPercent: 0.4 },
+      ],
+    };
+
+    const quotes: Record<string, QuoteData> = {};
+    const { treeMapNodes } = computePortfolioData(
+      positions,
+      quotes,
+      holdings,
+      1200,
+      400
     );
+
+    const topLevelNodes = treeMapNodes.filter((node) => node.depth === 1);
+    const highestTopLevelY = Math.min(...topLevelNodes.map((node) => node.y0));
+
+    expect(highestTopLevelY).toBeLessThan(5);
+
+    const fundNode = topLevelNodes.find((node) => node.symbol === "VTI");
+    const fundChildren = treeMapNodes.filter(
+      (node) => node.depth === 2 && node.parentSymbol === "VTI"
+    );
+
+    expect(fundNode).toBeDefined();
+    expect(fundChildren.length).toBeGreaterThan(0);
+
+    const highestFundChildY = Math.min(...fundChildren.map((node) => node.y0));
+    expect(highestFundChildY).toBeGreaterThan((fundNode?.y0 ?? 0) + 10);
   });
 
   it("labels retained remainder as rest of the fund in treemap and table", () => {
