@@ -19,6 +19,7 @@ pnpm build        # Production build
 pnpm start        # Start production server
 pnpm test         # Run tests
 pnpm lint         # Lint
+pnpm typecheck    # Run TypeScript checks
 ```
 
 ## Stack
