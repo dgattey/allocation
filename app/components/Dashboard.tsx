@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { ChangeEvent, CSSProperties } from "react";
 import type {
   ActivePortfolioSummary,
   FundOption,
@@ -12,6 +12,8 @@ import type {
   TreeMapGrouping,
   ViewMode,
 } from "@/lib/types";
+import { hasActivePortfolioFilters } from "@/lib/portfolioFilters";
+import { getFilteredRows } from "@/lib/portfolioSelectors";
 import { formatDollar, formatHeaderCurrency } from "@/lib/utils";
 import { AnimatedNumber } from "./primitives/AnimatedNumber";
 import { GainLoss } from "./primitives/GainLoss";
@@ -51,6 +53,8 @@ interface DashboardProps {
   enableIntroAnimation?: boolean;
   enableValueAnimations?: boolean;
   fetchError?: string | null;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export function Dashboard({
@@ -82,14 +86,33 @@ export function Dashboard({
   enableIntroAnimation = true,
   enableValueAnimations = true,
   fetchError,
+  onRefresh,
+  isRefreshing = false,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
+  const searchQuery = filters.searchQuery ?? "";
+  const visibleHoldingCount =
+    viewMode === "holdings"
+      ? filteredRows.length
+      : getFilteredRows(
+          portfolioData.tableRows,
+          filters,
+          sortConfig,
+          selectedFunds
+        ).length;
 
   const displayValue = activeSummary?.value ?? summary.totalValue;
   const displayGainLoss = activeSummary?.gainLoss ?? summary.totalGainLoss;
   const displayGainLossPercent =
     activeSummary?.gainLossPercent ?? summary.totalGainLossPercent;
-  const isFiltered = activeSummary !== null;
+  const isFiltered = hasActivePortfolioFilters(filters, selectedFunds);
+
+  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+    onFiltersChange({
+      ...filters,
+      searchQuery: event.target.value,
+    });
+  }
 
   return (
     <div
@@ -155,7 +178,7 @@ export function Dashboard({
                   <h1 className="truncate text-sm font-semibold text-text-primary md:text-base">
                     {portfolioName}
                   </h1>
-                  {isFiltered && (
+                  {activeSummary && (
                     <p className="truncate text-xs text-text-muted">
                       {activeSummary.label}
                     </p>
@@ -235,6 +258,7 @@ export function Dashboard({
       {/* TreeMap */}
       <section
         className={cn(
+          isMobile ? "pt-2" : "pt-6",
           "mb-6 max-w-[1400px] mx-auto",
           enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
@@ -261,6 +285,8 @@ export function Dashboard({
             filters={filters}
             onFiltersChange={onFiltersChange}
             lastUpdated={lastUpdated}
+            onRefresh={onRefresh ?? (() => {})}
+            isRefreshing={isRefreshing}
             viewMode={viewMode}
             onViewModeChange={onViewModeChange}
             treeMapGrouping={treeMapGrouping}
@@ -285,6 +311,57 @@ export function Dashboard({
         )}
         style={{ "--enter-delay": "220ms" } as CSSProperties}
       >
+        <div
+          data-testid="portfolio-search-shell"
+          className={cn(
+            "sticky sticky-header z-30 mb-4 py-3",
+            isMobile ? "-mx-4 px-4" : "-mx-6 px-6",
+            isMobile ? "top-[5.75rem]" : "top-[7rem]"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "relative min-w-0 flex-1",
+                !isMobile && "max-w-xl lg:max-w-2xl"
+              )}
+            >
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="text"
+                role="searchbox"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Search by name or symbol"
+                aria-label="Search portfolio"
+                className={cn(
+                  "w-full rounded-xl border border-border bg-surface/95 py-2.5 pl-10 pr-3 text-sm text-text-primary shadow-[var(--shadow-sm)] backdrop-blur-xl",
+                  "outline-none transition-colors placeholder:text-text-muted hover:border-border/80 focus:border-border"
+                )}
+              />
+            </div>
+            <p
+              data-testid="inline-holdings-count"
+              className="shrink-0 self-center text-center text-sm text-text-muted"
+            >
+              {visibleHoldingCount.toLocaleString()}{" "}
+              {visibleHoldingCount === 1 ? "holding" : "holdings"}
+            </p>
+          </div>
+        </div>
+
         <PortfolioTable
           rows={filteredRows}
           sortConfig={sortConfig}
@@ -303,6 +380,8 @@ export function Dashboard({
           filters={filters}
           onFiltersChange={onFiltersChange}
           lastUpdated={lastUpdated}
+          onRefresh={onRefresh ?? (() => {})}
+          isRefreshing={isRefreshing}
           viewMode={viewMode}
           onViewModeChange={onViewModeChange}
           treeMapGrouping={treeMapGrouping}

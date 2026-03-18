@@ -98,6 +98,8 @@ export function PortfolioDetailClient({
         enableIntroAnimation={!record.restoredFromStorage}
         enableValueAnimations={!record.restoredFromStorage}
         fetchError={record.error}
+        onRefresh={record.refreshData}
+        isRefreshing={record.isRefreshing}
       />
     </main>
   );

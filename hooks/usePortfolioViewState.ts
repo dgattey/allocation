@@ -37,6 +37,7 @@ function createDefaultFilters(): FilterState {
   return {
     investmentTypes: [],
     accounts: [],
+    searchQuery: "",
   };
 }
 
@@ -120,7 +121,8 @@ export function usePortfolioViewState({
       !areStringArraysEqual(
         filters.investmentTypes,
         sanitized.filters.investmentTypes
-      )
+      ) ||
+      (filters.searchQuery ?? "") !== (sanitized.filters.searchQuery ?? "")
     ) {
       setFiltersState(sanitized.filters);
     }

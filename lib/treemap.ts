@@ -4,6 +4,7 @@ import { isFundInvestmentType } from "./investmentTypes";
 import {
   matchesRowSourceFundSelection,
   matchesSourceFilters,
+  matchesTableRowSearch,
 } from "./portfolioFilters";
 import type { FilterState, FundOption, TableRow, TreeMapNode } from "./types";
 
@@ -156,11 +157,11 @@ export function relayoutTreeMapNodes(
   const laidOut = treemap<RelayoutHierarchyData>()
     .size([width, height])
     .tile(treemapSquarify)
-    .paddingOuter(3)
+    .paddingOuter(4)
     .paddingTop((node) =>
       node.depth === 0 ? 0 : node.children && node.children.length > 0 ? 20 : 0
     )
-    .paddingInner(2)(root);
+    .paddingInner(4)(root);
 
   return laidOut
     .descendants()
@@ -207,17 +208,10 @@ export function buildFlatHoldingTreeMapNodes({
   const visibleRows: Omit<FlatNodeData, "color">[] = [];
 
   for (const row of rows) {
-    let visibleValue = 0;
-    const accounts = new Set<string>();
-    const investmentTypes = new Set<string>();
-
-    for (const source of row.sources) {
-      if (!matchesSourceFilters(source.account, source.investmentType, filters)) {
-        continue;
-      }
-
-      if (
-        !matchesRowSourceFundSelection(
+    const visibleSources = row.sources.filter(
+      (source) =>
+        matchesSourceFilters(source.account, source.investmentType, filters) &&
+        matchesRowSourceFundSelection(
           {
             rowSymbol: row.symbol,
             sourceType: source.type,
@@ -225,21 +219,32 @@ export function buildFlatHoldingTreeMapNodes({
           },
           selectedFunds
         )
-      ) {
-        continue;
-      }
+    );
 
-      visibleValue += source.value;
-      accounts.add(source.account);
-      investmentTypes.add(source.investmentType);
-    }
-
-    if (visibleValue <= 0) {
+    if (
+      visibleSources.length === 0 ||
+      !matchesTableRowSearch(
+        {
+          symbol: row.symbol,
+          name: row.name,
+          sources: visibleSources,
+        },
+        filters.searchQuery
+      )
+    ) {
       continue;
     }
 
-    const visibleInvestmentTypes = [...investmentTypes];
-    const visibleAccounts = [...accounts];
+    const visibleValue = visibleSources.reduce(
+      (sum, source) => sum + source.value,
+      0
+    );
+    const visibleInvestmentTypes = [
+      ...new Set(visibleSources.map((source) => source.investmentType)),
+    ];
+    const visibleAccounts = [
+      ...new Set(visibleSources.map((source) => source.account)),
+    ];
     const hasOnlyDirectSources = row.sources.every((source) => source.type === "direct");
 
     visibleRows.push({
@@ -285,9 +290,9 @@ export function buildFlatHoldingTreeMapNodes({
   const laidOut = treemap<FlatHierarchyData>()
     .size([width, height])
     .tile(treemapSquarify)
-    .paddingOuter(3)
-    .paddingTop(3)
-    .paddingInner(2)(root);
+    .paddingOuter(4)
+    .paddingTop(4)
+    .paddingInner(4)(root);
 
   return (laidOut.children ?? []).map((node, index) => ({
     id: `${node.data.symbol!}-1-${index + 1}`,

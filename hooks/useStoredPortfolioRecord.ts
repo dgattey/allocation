@@ -26,9 +26,11 @@ export interface StoredPortfolioRecordState {
   positions: FidelityPosition[] | null;
   portfolioData: PortfolioData | null;
   isLoading: boolean;
+  isRefreshing: boolean;
   error: string | null;
   restoredFromStorage: boolean;
   isMissing: boolean;
+  refreshData: () => Promise<void>;
 }
 
 export function useStoredPortfolioRecord({
@@ -41,6 +43,7 @@ export function useStoredPortfolioRecord({
   const [positions, setPositions] = useState<FidelityPosition[] | null>(null);
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [restoredFromStorage, setRestoredFromStorage] = useState(false);
   const [isMissing, setIsMissing] = useState(false);
@@ -191,14 +194,26 @@ export function useStoredPortfolioRecord({
     };
   }, [positions, refreshPortfolioData]);
 
+  const refreshData = useCallback(async () => {
+    if (!positionsRef.current) {
+      return;
+    }
+
+    setIsRefreshing(true);
+    await refreshPortfolioData(positionsRef.current, "/api/portfolio/refresh", false);
+    setIsRefreshing(false);
+  }, [refreshPortfolioData]);
+
   return {
     summary,
     positions,
     portfolioData,
     isLoading,
+    isRefreshing,
     error,
     restoredFromStorage,
     isMissing,
+    refreshData,
   };
 }
 
