@@ -107,89 +107,137 @@ export function FloatingToolbar({
           isMobile ? "w-full max-w-none" : "w-fit max-w-[92vw]"
         )}
       >
-        <div
-          className={cn(
-            "gap-4",
-            isMobile
-              ? "flex flex-col"
-              : "flex flex-wrap items-center justify-between"
-          )}
-        >
-          <div
-            className={cn(
-              isMobile
-                ? "grid gap-3"
-                : "flex flex-wrap items-center gap-3"
-            )}
-          >
-            <ToolbarSection label="View">
-              <SegmentButton
-                active={viewMode === "holdings"}
-                onClick={() => onViewModeChange("holdings")}
-              >
-                Holdings
-              </SegmentButton>
-              <SegmentButton
-                active={viewMode === "positions"}
-                onClick={() => onViewModeChange("positions")}
-              >
-                Positions
-              </SegmentButton>
-            </ToolbarSection>
-
-            <ToolbarSection label="Treemap">
-              <SegmentButton
-                active={treeMapGrouping === "fund"}
-                onClick={() => onTreeMapGroupingChange("fund")}
-              >
-                By fund
-              </SegmentButton>
-              <SegmentButton
-                active={treeMapGrouping === "holding"}
-                onClick={() => onTreeMapGroupingChange("holding")}
-              >
-                Flat
-              </SegmentButton>
-            </ToolbarSection>
-
-            <button
-              type="button"
-              onClick={() => setShowFilters((open) => !open)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
-                showFilters || hasFilters
-                  ? "bg-white/12 text-white border-white/0 shadow-sm"
-                  : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
+        {isMobile ? (
+          <>
+            <div className="flex items-center justify-between gap-3 shrink-0">
+              {hasFilters ? (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="text-xs text-red-400/80 hover:text-red-300 font-medium whitespace-nowrap cursor-pointer transition-colors"
+                >
+                  Reset filters
+                </button>
+              ) : (
+                <span />
               )}
-            >
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-            </button>
-          </div>
 
-          <div
-            className={cn(
-              "gap-3 shrink-0",
-              isMobile
-                ? "flex items-center justify-between"
-                : "flex items-center"
-            )}
-          >
-            {hasFilters && (
+              <div className="flex items-center gap-1.5 text-xs text-white/40 whitespace-nowrap">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {timeAgo}
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <ToolbarSection label="View">
+                <SegmentButton
+                  active={viewMode === "holdings"}
+                  onClick={() => onViewModeChange("holdings")}
+                >
+                  Holdings
+                </SegmentButton>
+                <SegmentButton
+                  active={viewMode === "positions"}
+                  onClick={() => onViewModeChange("positions")}
+                >
+                  Positions
+                </SegmentButton>
+              </ToolbarSection>
+
+              <ToolbarSection label="Treemap">
+                <SegmentButton
+                  active={treeMapGrouping === "fund"}
+                  onClick={() => onTreeMapGroupingChange("fund")}
+                >
+                  By fund
+                </SegmentButton>
+                <SegmentButton
+                  active={treeMapGrouping === "holding"}
+                  onClick={() => onTreeMapGroupingChange("holding")}
+                >
+                  Flat
+                </SegmentButton>
+              </ToolbarSection>
+
               <button
                 type="button"
-                onClick={clearAllFilters}
-                className="text-xs text-red-400/80 hover:text-red-300 font-medium whitespace-nowrap cursor-pointer transition-colors"
+                onClick={() => setShowFilters((open) => !open)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
+                  showFilters || hasFilters
+                    ? "bg-white/12 text-white border-white/0 shadow-sm"
+                    : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
+                )}
               >
-                Reset filters
+                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
               </button>
-            )}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <ToolbarSection label="View">
+                <SegmentButton
+                  active={viewMode === "holdings"}
+                  onClick={() => onViewModeChange("holdings")}
+                >
+                  Holdings
+                </SegmentButton>
+                <SegmentButton
+                  active={viewMode === "positions"}
+                  onClick={() => onViewModeChange("positions")}
+                >
+                  Positions
+                </SegmentButton>
+              </ToolbarSection>
 
-            <div className="flex items-center gap-1.5 text-xs text-white/40 whitespace-nowrap">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {timeAgo}
+              <ToolbarSection label="Treemap">
+                <SegmentButton
+                  active={treeMapGrouping === "fund"}
+                  onClick={() => onTreeMapGroupingChange("fund")}
+                >
+                  By fund
+                </SegmentButton>
+                <SegmentButton
+                  active={treeMapGrouping === "holding"}
+                  onClick={() => onTreeMapGroupingChange("holding")}
+                >
+                  Flat
+                </SegmentButton>
+              </ToolbarSection>
+
+              <button
+                type="button"
+                onClick={() => setShowFilters((open) => !open)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
+                  showFilters || hasFilters
+                    ? "bg-white/12 text-white border-white/0 shadow-sm"
+                    : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
+                )}
+              >
+                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="text-xs text-red-400/80 hover:text-red-300 font-medium whitespace-nowrap cursor-pointer transition-colors"
+                >
+                  Reset filters
+                </button>
+              )}
+
+              <div className="flex items-center gap-1.5 text-xs text-white/40 whitespace-nowrap">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {timeAgo}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {showFilters && (
           <div className="flex flex-col gap-3 animate-fade-in">
