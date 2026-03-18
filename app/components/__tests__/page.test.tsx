@@ -17,7 +17,18 @@ vi.mock("../UploadView", () => ({
 }));
 
 vi.mock("../Dashboard", () => ({
-  Dashboard: () => <div data-testid="dashboard">Dashboard</div>,
+  Dashboard: (props: {
+    enableIntroAnimation?: boolean;
+    enableValueAnimations?: boolean;
+  }) => (
+    <div
+      data-testid="dashboard"
+      data-intro-animation={props.enableIntroAnimation ? "true" : "false"}
+      data-value-animations={props.enableValueAnimations ? "true" : "false"}
+    >
+      Dashboard
+    </div>
+  ),
 }));
 
 import Home from "../../page";
@@ -54,6 +65,8 @@ function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>>
     activeSummary: null,
     treeMapWidth: 1200,
     treeMapHeight: 400,
+    restoredFromStorage: false,
+    suppressStartupValueAnimations: false,
     ...overrides,
   };
 }
@@ -103,6 +116,49 @@ describe("Home page routing", () => {
     render(<Home />);
     expect(screen.getByTestId("dashboard")).toBeInTheDocument();
     expect(screen.queryByTestId("upload-view")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard")).toHaveAttribute(
+      "data-intro-animation",
+      "true"
+    );
+    expect(screen.getByTestId("dashboard")).toHaveAttribute(
+      "data-value-animations",
+      "true"
+    );
+  });
+
+  it("disables intro and value animations while a restored session settles", () => {
+    const mockData = {
+      treeMapNodes: [],
+      tableRows: [],
+      positionRows: [],
+      summary: {
+        totalValue: 100000,
+        totalGainLoss: 5000,
+        totalGainLossPercent: 5,
+        accounts: ["Account1"],
+        investmentTypes: ["Stocks"],
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+    mockUsePortfolio.mockReturnValue(
+      makePortfolioReturn({
+        hasData: true,
+        portfolioData: mockData,
+        restoredFromStorage: true,
+        suppressStartupValueAnimations: true,
+      })
+    );
+
+    render(<Home />);
+
+    expect(screen.getByTestId("dashboard")).toHaveAttribute(
+      "data-intro-animation",
+      "false"
+    );
+    expect(screen.getByTestId("dashboard")).toHaveAttribute(
+      "data-value-animations",
+      "false"
+    );
   });
 
   it("passes error to UploadView when present", () => {

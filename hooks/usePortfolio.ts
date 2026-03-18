@@ -57,6 +57,9 @@ export function usePortfolio() {
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [restoredFromStorage, setRestoredFromStorage] = useState(false);
+  const [suppressStartupValueAnimations, setSuppressStartupValueAnimations] =
+    useState(false);
 
   // UI state
   const [filters, setFiltersState] = useState<FilterState>({
@@ -100,6 +103,18 @@ export function usePortfolio() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
+  useEffect(() => {
+    if (!suppressStartupValueAnimations || isLoading) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSuppressStartupValueAnimations(false);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [isLoading, suppressStartupValueAnimations]);
+
   const fetchData = useCallback(
     async (pos: FidelityPosition[], endpoint: string) => {
       try {
@@ -136,7 +151,10 @@ export function usePortfolio() {
 
     const saved = loadPortfolio();
     if (saved) {
+      resetInitialScrollPosition();
       const cachedPortfolioData = loadPortfolioData();
+      setRestoredFromStorage(true);
+      setSuppressStartupValueAnimations(true);
       setPositions(saved);
       if (cachedPortfolioData) {
         setPortfolioData(cachedPortfolioData);
@@ -268,6 +286,8 @@ export function usePortfolio() {
     setPositions(null);
     setPortfolioData(null);
     setError(null);
+    setRestoredFromStorage(false);
+    setSuppressStartupValueAnimations(false);
     setExpandedRows(new Set());
     setFiltersState({ investmentTypes: [], accounts: [] });
     setSelectedFundsState([]);
@@ -346,6 +366,8 @@ export function usePortfolio() {
     isMobile,
     isLoading,
     error,
+    restoredFromStorage,
+    suppressStartupValueAnimations,
     portfolioData,
     filteredRows,
     filteredTreeMapNodes,
@@ -370,6 +392,20 @@ export function usePortfolio() {
     treeMapHeight: treeMapLayout.height,
     activeSummary,
   };
+}
+
+function resetInitialScrollPosition() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const previousScrollRestoration = window.history.scrollRestoration;
+  window.history.scrollRestoration = "manual";
+  window.scrollTo(0, 0);
+
+  window.setTimeout(() => {
+    window.history.scrollRestoration = previousScrollRestoration;
+  }, 0);
 }
 
 // Pure functions

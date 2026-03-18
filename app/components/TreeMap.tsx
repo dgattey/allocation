@@ -21,6 +21,7 @@ interface TreeMapProps {
   onToggleFund?: (symbol: string) => void;
   onClearFunds?: () => void;
   isMobile?: boolean;
+  enableIntroAnimation?: boolean;
 }
 
 export function TreeMap({
@@ -32,6 +33,7 @@ export function TreeMap({
   onToggleFund,
   onClearFunds,
   isMobile = false,
+  enableIntroAnimation = true,
 }: TreeMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(originalWidth);
@@ -169,7 +171,10 @@ export function TreeMap({
     <div className="relative">
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-2xl bg-surface border border-border/60 shadow-[var(--shadow-md)] cursor-default touch-manipulation animate-soft-rise"
+        className={cn(
+          "relative w-full overflow-hidden rounded-2xl bg-surface border border-border/60 shadow-[var(--shadow-md)] cursor-default touch-manipulation",
+          enableIntroAnimation && "animate-soft-rise"
+        )}
         style={
           {
             height: scaledHeight,
@@ -194,7 +199,8 @@ export function TreeMap({
             <div
               key={`group-${node.id}`}
               className={cn(
-                "absolute rounded-lg animate-soft-pop",
+                "absolute rounded-lg",
+                enableIntroAnimation && "animate-soft-pop",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 grouping === "fund" && "cursor-pointer"
               )}
@@ -246,7 +252,8 @@ export function TreeMap({
             <div
               key={node.id}
               className={cn(
-                "absolute rounded-lg flex flex-col items-center justify-center animate-tile-in",
+                "absolute rounded-lg flex flex-col items-center justify-center",
+                enableIntroAnimation && "animate-tile-in",
                 "select-none overflow-hidden",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 grouping === "fund" ? "cursor-pointer" : "cursor-default",

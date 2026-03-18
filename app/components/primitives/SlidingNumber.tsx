@@ -7,13 +7,19 @@ interface SlidingNumberProps {
   value: number;
   format: (n: number) => string;
   className?: string;
+  animate?: boolean;
 }
 
 /**
  * Displays a formatted number. On value change, the old value
  * slides out and new value slides in with a smooth transition.
  */
-export function SlidingNumber({ value, format, className }: SlidingNumberProps) {
+export function SlidingNumber({
+  value,
+  format,
+  className,
+  animate = true,
+}: SlidingNumberProps) {
   const formatted = format(value);
   const prevValue = useRef(value);
   const [display, setDisplay] = useState(formatted);
@@ -21,6 +27,13 @@ export function SlidingNumber({ value, format, className }: SlidingNumberProps) 
   const [slideDirection, setSlideDirection] = useState<"up" | "down">("up");
 
   useEffect(() => {
+    if (!animate) {
+      prevValue.current = value;
+      setDisplay(formatted);
+      setIsTransitioning(false);
+      return;
+    }
+
     if (prevValue.current !== value) {
       const dir = value > prevValue.current ? "up" : "down";
       setSlideDirection(dir);
@@ -35,7 +48,7 @@ export function SlidingNumber({ value, format, className }: SlidingNumberProps) 
 
       return () => clearTimeout(swapTimer);
     }
-  }, [value, formatted]);
+  }, [animate, value, formatted]);
 
   return (
     <span

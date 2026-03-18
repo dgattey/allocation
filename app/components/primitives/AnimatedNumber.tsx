@@ -7,17 +7,25 @@ interface AnimatedNumberProps {
   value: number;
   format: (n: number) => string;
   className?: string;
+  animate?: boolean;
 }
 
 export function AnimatedNumber({
   value,
   format,
   className,
+  animate = true,
 }: AnimatedNumberProps) {
   const prevValue = useRef(value);
   const [flashClass, setFlashClass] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!animate) {
+      prevValue.current = value;
+      setFlashClass(null);
+      return;
+    }
+
     if (prevValue.current !== value) {
       const direction = value > prevValue.current ? "positive" : "negative";
       setFlashClass(direction);
@@ -26,7 +34,7 @@ export function AnimatedNumber({
       const timer = setTimeout(() => setFlashClass(null), 600);
       return () => clearTimeout(timer);
     }
-  }, [value]);
+  }, [animate, value]);
 
   return (
     <span

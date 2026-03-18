@@ -45,6 +45,8 @@ interface DashboardProps {
   activeSummary: ActivePortfolioSummary | null;
   treeMapWidth: number;
   treeMapHeight: number;
+  enableIntroAnimation?: boolean;
+  enableValueAnimations?: boolean;
 }
 
 export function Dashboard({
@@ -72,6 +74,8 @@ export function Dashboard({
   activeSummary,
   treeMapWidth,
   treeMapHeight,
+  enableIntroAnimation = true,
+  enableValueAnimations = true,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
 
@@ -85,7 +89,8 @@ export function Dashboard({
   return (
     <div
       className={cn(
-        "min-h-screen animate-fade-in",
+        "min-h-screen",
+        enableIntroAnimation && "animate-fade-in",
         isMobile ? "pb-8" : "pb-20"
       )}
     >
@@ -99,7 +104,7 @@ export function Dashboard({
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div
-              className="min-w-0 animate-soft-rise"
+              className={cn("min-w-0", enableIntroAnimation && "animate-soft-rise")}
               style={{ "--enter-delay": "40ms" } as CSSProperties}
             >
               <div className="mb-2 flex min-w-0 items-center gap-2">
@@ -108,7 +113,8 @@ export function Dashboard({
                     type="button"
                     onClick={onResetFilters}
                     className={cn(
-                      "animate-scale-in inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full px-3 py-2",
+                      "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full px-3 py-2",
+                      enableIntroAnimation && "animate-scale-in",
                       "text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer hover-lift press-down",
                       "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
                       "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
@@ -158,6 +164,7 @@ export function Dashboard({
                   <SlidingNumber
                     value={displayValue}
                     format={formatHeaderCurrency}
+                    animate={enableValueAnimations}
                     className={cn(
                       "font-bold text-text-primary",
                       isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
@@ -186,7 +193,10 @@ export function Dashboard({
             </div>
 
             <div
-              className="flex shrink-0 flex-col items-start justify-center gap-2 md:items-end animate-soft-rise"
+              className={cn(
+                "flex shrink-0 flex-col items-start justify-center gap-2 md:items-end",
+                enableIntroAnimation && "animate-soft-rise"
+              )}
               style={{ "--enter-delay": "120ms" } as CSSProperties}
             >
               <button
@@ -233,7 +243,8 @@ export function Dashboard({
       {/* TreeMap */}
       <section
         className={cn(
-          "mb-6 max-w-[1400px] mx-auto animate-soft-rise",
+          "mb-6 max-w-[1400px] mx-auto",
+          enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
         )}
         style={{ "--enter-delay": "160ms" } as CSSProperties}
@@ -247,6 +258,7 @@ export function Dashboard({
           onToggleFund={onToggleFund}
           onClearFunds={onClearFunds}
           isMobile={isMobile}
+          enableIntroAnimation={enableIntroAnimation}
         />
       </section>
 
@@ -266,6 +278,7 @@ export function Dashboard({
             onToggleFund={onToggleFund}
             onClearFunds={onClearFunds}
             isMobile
+            enableIntroAnimation={enableIntroAnimation}
           />
         </section>
       )}
@@ -273,7 +286,8 @@ export function Dashboard({
       {/* Table */}
       <section
         className={cn(
-          "max-w-[1400px] mx-auto animate-soft-rise",
+          "max-w-[1400px] mx-auto",
+          enableIntroAnimation && "animate-soft-rise",
           isMobile ? "px-4" : "px-6"
         )}
         style={{ "--enter-delay": "220ms" } as CSSProperties}
@@ -285,6 +299,8 @@ export function Dashboard({
           expandedRows={expandedRows}
           onToggleExpand={onToggleExpand}
           isMobile={isMobile}
+          enableIntroAnimation={enableIntroAnimation}
+          enableValueAnimations={enableValueAnimations}
         />
       </section>
 
@@ -302,6 +318,7 @@ export function Dashboard({
           selectedFunds={selectedFunds}
           onToggleFund={onToggleFund}
           onClearFunds={onClearFunds}
+          enableIntroAnimation={enableIntroAnimation}
         />
       )}
     </div>

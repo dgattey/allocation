@@ -18,7 +18,9 @@ export default function Home() {
   }
 
   if (!portfolio.portfolioData) {
-    return <LoadingSkeleton />;
+    return (
+      <LoadingSkeleton enableIntroAnimation={!portfolio.restoredFromStorage} />
+    );
   }
 
   return (
@@ -47,13 +49,26 @@ export default function Home() {
       activeSummary={portfolio.activeSummary}
       treeMapWidth={portfolio.treeMapWidth}
       treeMapHeight={portfolio.treeMapHeight}
+      enableIntroAnimation={!portfolio.restoredFromStorage}
+      enableValueAnimations={!portfolio.suppressStartupValueAnimations}
     />
   );
 }
 
-function LoadingSkeleton() {
+function LoadingSkeleton({
+  enableIntroAnimation = true,
+}: {
+  enableIntroAnimation?: boolean;
+}) {
   return (
-    <div className="min-h-screen p-6 max-w-[1400px] mx-auto animate-fade-in">
+    <div
+      className={[
+        "min-h-screen p-6 max-w-[1400px] mx-auto",
+        enableIntroAnimation ? "animate-fade-in" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="mb-6">
         <div className="skeleton h-4 w-32 mb-2" />
         <div className="skeleton h-9 w-48" />

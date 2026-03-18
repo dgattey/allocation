@@ -30,6 +30,7 @@ interface FloatingToolbarProps {
   onToggleFund: (symbol: string) => void;
   onClearFunds: () => void;
   isMobile?: boolean;
+  enableIntroAnimation?: boolean;
 }
 
 export function FloatingToolbar({
@@ -46,6 +47,7 @@ export function FloatingToolbar({
   onToggleFund,
   onClearFunds,
   isMobile = false,
+  enableIntroAnimation = true,
 }: FloatingToolbarProps) {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -103,7 +105,7 @@ export function FloatingToolbar({
   return (
     <div
       className={cn(
-        "animate-soft-rise",
+        enableIntroAnimation && "animate-soft-rise",
         isMobile
           ? "w-full"
           : "fixed bottom-4 left-1/2 z-40 -translate-x-1/2"
