@@ -34,12 +34,14 @@ function makeProps() {
 }
 
 describe("HeaderFundSelector", () => {
-  it("opens the chooser and toggles fund chips", () => {
+  it("opens the add-funds menu and toggles fund options", () => {
     const props = makeProps();
     render(<HeaderFundSelector {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Select funds" }));
-    fireEvent.click(screen.getAllByRole("button", { name: "VTI" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Add funds" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /VTI\s+Vanguard Total Stock Market/i })
+    );
 
     expect(props.onToggleFund).toHaveBeenCalledWith("VTI");
   });
@@ -62,14 +64,14 @@ describe("HeaderFundSelector", () => {
     expect(props.onClearFunds).toHaveBeenCalledTimes(1);
   });
 
-  it("shows clear selection inside the chooser when funds are selected", () => {
+  it("shows all-funds reset inside the menu when funds are selected", () => {
     const props = makeProps();
     props.selectedFunds = ["FXAIX"];
 
     render(<HeaderFundSelector {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Add fund" }));
-    fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add funds" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "All funds" })[1]);
 
     expect(props.onClearFunds).toHaveBeenCalledTimes(1);
   });

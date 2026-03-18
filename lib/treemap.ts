@@ -33,17 +33,30 @@ export function getFundOptions(nodes: TreeMapNode[]): FundOption[] {
       .map((node) => node.parentSymbol)
       .filter((symbol): symbol is string => Boolean(symbol))
   );
+  const options = new Map<string, FundOption>();
 
-  return nodes
-    .filter((node) => node.depth === 1 && isFundInvestmentType(node.investmentType))
-    .map((node) => ({
+  for (const node of nodes) {
+    if (node.depth !== 1 || !isFundInvestmentType(node.investmentType)) {
+      continue;
+    }
+
+    const existing = options.get(node.symbol);
+    if (existing) {
+      existing.value += node.value;
+      existing.hasChildren = existing.hasChildren || parentSymbols.has(node.symbol);
+      continue;
+    }
+
+    options.set(node.symbol, {
       symbol: node.symbol,
       name: node.name,
       color: node.color,
       value: node.value,
       hasChildren: parentSymbols.has(node.symbol),
-    }))
-    .sort((a, b) => b.value - a.value);
+    });
+  }
+
+  return [...options.values()].sort((a, b) => b.value - a.value);
 }
 
 export function filterFundTreeMapNodes(

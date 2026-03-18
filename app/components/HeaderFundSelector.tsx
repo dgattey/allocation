@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
 import type { FundOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -17,17 +23,32 @@ export function HeaderFundSelector({
   onToggleFund,
   onClearFunds,
 }: HeaderFundSelectorProps) {
-  const [showChooser, setShowChooser] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const selectedOptions = funds.filter((fund) =>
     selectedFunds.includes(fund.symbol)
   );
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (funds.length === 0) {
     return null;
   }
 
   return (
-    <div className="mt-5 max-w-[780px] rounded-2xl border border-border/70 bg-surface/86 backdrop-blur-xl shadow-[var(--shadow-md)] px-4 py-3">
+    <div
+      ref={containerRef}
+      className="relative mt-5 max-w-[780px] rounded-2xl border border-border/70 bg-surface/86 backdrop-blur-xl shadow-[var(--shadow-md)] px-4 py-3"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <HeaderLabel>Funds</HeaderLabel>
 
@@ -60,70 +81,57 @@ export function HeaderFundSelector({
         ))}
 
         <button
-          onClick={() => setShowChooser((open) => !open)}
+          onClick={() => setShowMenu((open) => !open)}
           className={cn(
             "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
-            showChooser
+            showMenu
               ? "bg-surface-hover text-text-primary border-border shadow-sm"
               : "bg-surface text-text-muted border-border hover:text-text-primary hover:bg-surface-hover"
           )}
         >
-          {showChooser
-            ? "Hide funds"
-            : selectedFunds.length > 0
-              ? "Add fund"
-              : "Select funds"}
+          Add funds
         </button>
       </div>
 
-      {showChooser && (
-        <div className="mt-3 rounded-2xl border border-border/70 bg-surface/94 backdrop-blur-xl shadow-[var(--shadow-lg)] p-4 animate-fade-in">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <div>
-              <p className="text-sm font-medium text-text-primary">
-                Compare specific funds
-              </p>
-              <p className="text-xs text-text-muted">
-                Select one or more funds. Treemap clicks still work too.
-              </p>
-            </div>
-
-            {selectedFunds.length > 0 && (
-              <button
-                onClick={onClearFunds}
-                className="text-xs font-medium text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-              >
-                Clear selection
-              </button>
+      {showMenu && (
+        <div className="absolute left-0 top-full mt-2 w-[320px] max-w-[calc(100vw-3rem)] rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-lg)] p-2 z-20 animate-fade-in">
+          <button
+            onClick={(event) => {
+              event.preventDefault();
+              onClearFunds();
+            }}
+            className={cn(
+              "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors cursor-pointer",
+              selectedFunds.length === 0
+                ? "bg-surface-hover text-text-primary"
+                : "text-text-primary hover:bg-surface-hover"
             )}
-          </div>
+          >
+            <span>All funds</span>
+            <MenuCheck checked={selectedFunds.length === 0} />
+          </button>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="my-2 h-px bg-border/80" />
+
+          <div className="max-h-[260px] overflow-y-auto">
             {funds.map((fund) => {
               const selected = selectedFunds.includes(fund.symbol);
 
               return (
                 <button
                   key={fund.symbol}
-                  onClick={() => onToggleFund(fund.symbol)}
-                  title={fund.name}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border cursor-pointer whitespace-nowrap",
-                    "hover:brightness-110 active:scale-95",
-                    selected
-                      ? "text-white border-white/0 shadow-sm"
-                      : "bg-surface text-text-muted border-border hover:text-text-primary hover:bg-surface-hover"
-                  )}
-                  style={
-                    selected
-                      ? {
-                          backgroundColor: fund.color,
-                          borderColor: `${fund.color}66`,
-                        }
-                      : undefined
-                  }
+                  onClick={(event) => handleMenuToggle(event, fund.symbol)}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover transition-colors cursor-pointer"
                 >
-                  {fund.symbol}
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-text-primary">
+                      {fund.symbol}
+                    </div>
+                    <div className="truncate text-xs text-text-muted">
+                      {fund.name}
+                    </div>
+                  </div>
+                  <MenuCheck checked={selected} color={fund.color} />
                 </button>
               );
             })}
@@ -132,12 +140,40 @@ export function HeaderFundSelector({
       )}
     </div>
   );
+
+  function handleMenuToggle(event: ReactMouseEvent<HTMLButtonElement>, symbol: string) {
+    event.preventDefault();
+    onToggleFund(symbol);
+  }
 }
 
 function HeaderLabel({ children }: { children: ReactNode }) {
   return (
     <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-text-muted whitespace-nowrap">
       {children}
+    </span>
+  );
+}
+
+function MenuCheck({
+  checked,
+  color,
+}: {
+  checked: boolean;
+  color?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "flex h-5 w-5 items-center justify-center rounded-md border text-[11px] font-bold transition-colors",
+        checked
+          ? "text-white border-transparent"
+          : "text-transparent border-border bg-surface"
+      )}
+      style={checked && color ? { backgroundColor: color } : undefined}
+      aria-hidden="true"
+    >
+      ✓
     </span>
   );
 }

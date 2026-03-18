@@ -316,19 +316,47 @@ function getSelectedFundsSummary(
 } | null {
   if (!portfolioData || selectedFunds.length === 0) return null;
 
-  const fundNodes = portfolioData.treeMapNodes.filter(
-    (node) => node.depth === 1 && selectedFunds.includes(node.symbol)
-  );
+  const fundGroups = new Map<
+    string,
+    {
+      name: string;
+      value: number;
+      gainLoss: number;
+      estimatedCostBasis: number;
+    }
+  >();
 
-  if (fundNodes.length === 0) return null;
+  for (const node of portfolioData.treeMapNodes) {
+    if (node.depth !== 1 || !selectedFunds.includes(node.symbol)) {
+      continue;
+    }
 
-  const value = fundNodes.reduce((sum, node) => sum + node.value, 0);
-  const gainLoss = fundNodes.reduce(
-    (sum, node) => sum + (node.totalGainLossDollar ?? 0),
+    const existing = fundGroups.get(node.symbol);
+    if (existing) {
+      existing.value += node.value;
+      existing.gainLoss += node.totalGainLossDollar ?? 0;
+      existing.estimatedCostBasis += estimateCostBasis(node);
+      continue;
+    }
+
+    fundGroups.set(node.symbol, {
+      name: node.name,
+      value: node.value,
+      gainLoss: node.totalGainLossDollar ?? 0,
+      estimatedCostBasis: estimateCostBasis(node),
+    });
+  }
+
+  const fundGroupsList = [...fundGroups.values()];
+  if (fundGroupsList.length === 0) return null;
+
+  const value = fundGroupsList.reduce((sum, group) => sum + group.value, 0);
+  const gainLoss = fundGroupsList.reduce(
+    (sum, group) => sum + group.gainLoss,
     0
   );
-  const estimatedCostBasis = fundNodes.reduce(
-    (sum, node) => sum + estimateCostBasis(node),
+  const estimatedCostBasis = fundGroupsList.reduce(
+    (sum, group) => sum + group.estimatedCostBasis,
     0
   );
 
@@ -337,7 +365,10 @@ function getSelectedFundsSummary(
     gainLoss,
     gainLossPercent:
       estimatedCostBasis > 0 ? (gainLoss / estimatedCostBasis) * 100 : 0,
-    label: fundNodes.length === 1 ? fundNodes[0].name : `${fundNodes.length} funds selected`,
+    label:
+      fundGroupsList.length === 1
+        ? fundGroupsList[0].name
+        : `${fundGroupsList.length} funds selected`,
   };
 }
 

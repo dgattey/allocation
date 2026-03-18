@@ -212,6 +212,20 @@ describe("treemap helpers", () => {
         depth: 2,
       },
       {
+        id: "vti-1-dup",
+        symbol: "VTI",
+        name: "Vanguard Total Stock Market",
+        value: 400,
+        color: "#4E9999",
+        percentOfPortfolio: 10,
+        x0: 0,
+        y0: 200,
+        x1: 250,
+        y1: 300,
+        depth: 1,
+        investmentType: "ETFs",
+      },
+      {
         id: "msft-1-3",
         symbol: "MSFT",
         name: "Microsoft",
@@ -246,7 +260,7 @@ describe("treemap helpers", () => {
         symbol: "VTI",
         name: "Vanguard Total Stock Market",
         color: "#4E9999",
-        value: 1000,
+        value: 1400,
         hasChildren: true,
       },
       {
@@ -261,6 +275,7 @@ describe("treemap helpers", () => {
     expect(filterFundTreeMapNodes(groupedNodes, ["VTI"])).toEqual([
       groupedNodes[0],
       groupedNodes[1],
+      groupedNodes[2],
     ]);
   });
 });
