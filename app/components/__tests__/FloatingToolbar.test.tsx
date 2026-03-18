@@ -93,7 +93,7 @@ describe("FloatingToolbar", () => {
     const props = makeProps();
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
     fireEvent.click(screen.getByRole("button", { name: "VTI" }));
 
     expect(props.onToggleFund).toHaveBeenCalledWith("VTI");
@@ -108,7 +108,7 @@ describe("FloatingToolbar", () => {
 
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
     fireEvent.click(screen.getByRole("button", { name: "All types" }));
 
     expect(props.onFiltersChange).toHaveBeenCalledWith({
