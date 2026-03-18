@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildFlatHoldingTreeMapNodes,
+  filterAndRelayoutFundTreeMapNodes,
   filterFundTreeMapNodes,
   getFundOptions,
 } from "../treemap";
@@ -195,6 +196,61 @@ describe("treemap helpers", () => {
     expect(selectedFundNodes).toHaveLength(2);
   });
 
+  it("keeps flat holding colors stable when other rows are filtered out", () => {
+    const rows: TableRow[] = [
+      makeRow({
+        symbol: "EQTY-A",
+        accounts: ["Account A"],
+        sources: [
+          makeSource({
+            type: "direct",
+            sourceName: "Account A",
+            value: 250,
+            percentOfSource: 100,
+            account: "Account A",
+            investmentType: "Stocks",
+          }),
+        ],
+      }),
+      makeRow({
+        symbol: "EQTY-B",
+        name: "Synthetic Equity B",
+        accounts: ["Account B"],
+        sources: [
+          makeSource({
+            type: "direct",
+            sourceName: "Account B",
+            value: 150,
+            percentOfSource: 100,
+            account: "Account B",
+            investmentType: "Stocks",
+          }),
+        ],
+      }),
+    ];
+
+    const allNodes = buildFlatHoldingTreeMapNodes({
+      rows,
+      filters: NO_FILTERS,
+      selectedFunds: [],
+      totalPortfolioValue: 400,
+      width: 1200,
+      height: 400,
+    });
+    const filteredNodes = buildFlatHoldingTreeMapNodes({
+      rows,
+      filters: { investmentTypes: [], accounts: ["Account A"] },
+      selectedFunds: [],
+      totalPortfolioValue: 250,
+      width: 1200,
+      height: 400,
+    });
+
+    expect(allNodes.find((node) => node.symbol === "EQTY-A")?.color).toBe(
+      filteredNodes.find((node) => node.symbol === "EQTY-A")?.color
+    );
+  });
+
   it("returns only selectable fund chips and filters grouped nodes by selection", () => {
     const groupedNodes: TreeMapNode[] = [
       {
@@ -291,5 +347,63 @@ describe("treemap helpers", () => {
       groupedNodes[1],
       groupedNodes[2],
     ]);
+  });
+
+  it("relayouts selected fund treemap nodes to avoid empty gaps", () => {
+    const groupedNodes: TreeMapNode[] = [
+      {
+        id: "fund-a-1-1",
+        symbol: "FUND-A",
+        name: "Synthetic Market Fund",
+        value: 1000,
+        color: "#4E9999",
+        percentOfPortfolio: 25,
+        x0: 0,
+        y0: 0,
+        x1: 500,
+        y1: 200,
+        depth: 1,
+        investmentType: "ETFs",
+      },
+      {
+        id: "eqty-a-2-2",
+        symbol: "EQTY-A",
+        name: "Synthetic Equity A",
+        value: 200,
+        color: "#80BABA",
+        parentSymbol: "FUND-A",
+        percentOfPortfolio: 5,
+        x0: 0,
+        y0: 20,
+        x1: 200,
+        y1: 200,
+        depth: 2,
+      },
+      {
+        id: "fund-c-1-4",
+        symbol: "FUND-C",
+        name: "Synthetic Income Fund",
+        value: 300,
+        color: "#C49A5C",
+        percentOfPortfolio: 7.5,
+        x0: 800,
+        y0: 0,
+        x1: 1000,
+        y1: 200,
+        depth: 1,
+        investmentType: "Mutual Funds",
+      },
+    ];
+
+    const relaidOutNodes = filterAndRelayoutFundTreeMapNodes(
+      groupedNodes,
+      ["FUND-A"],
+      1200,
+      400
+    );
+    const topLevelNodes = relaidOutNodes.filter((node) => node.depth === 1);
+
+    expect(Math.min(...topLevelNodes.map((node) => node.x0))).toBeLessThan(5);
+    expect(Math.max(...topLevelNodes.map((node) => node.x1))).toBeGreaterThan(1190);
   });
 });

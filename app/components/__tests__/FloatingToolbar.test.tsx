@@ -64,7 +64,11 @@ describe("FloatingToolbar", () => {
 
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+    const resetButton = screen.getByRole("button", { name: "Reset filters" });
+    expect(resetButton).toHaveAttribute("title", "Reset all filters");
+    expect(screen.queryByText("Reset filters")).not.toBeInTheDocument();
+
+    fireEvent.click(resetButton);
 
     expect(props.onResetFilters).toHaveBeenCalledTimes(1);
   });

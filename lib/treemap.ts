@@ -1,5 +1,5 @@
 import { hierarchy, treemap, treemapSquarify } from "d3-hierarchy";
-import { assignColors, DEFAULT_TREEMAP_COLOR } from "./colors";
+import { getColorForSymbol } from "./colors";
 import { isFundInvestmentType } from "./investmentTypes";
 import {
   matchesRowSourceFundSelection,
@@ -82,20 +82,36 @@ export function filterFundTreeMapNodes(
   });
 }
 
+export function filterAndRelayoutFundTreeMapNodes(
+  nodes: TreeMapNode[],
+  selectedFunds: string[],
+  width: number,
+  height: number
+): TreeMapNode[] {
+  const filteredNodes = filterFundTreeMapNodes(nodes, selectedFunds);
+
+  if (selectedFunds.length === 0 || filteredNodes.length === 0) {
+    return filteredNodes;
+  }
+
+  return relayoutTreeMapNodes(filteredNodes, width, height);
+}
+
 export function relayoutTreeMapNodes(
   nodes: TreeMapNode[],
   width: number,
   height: number
 ): TreeMapNode[] {
-  if (nodes.length === 0) {
+  const visibleNodes = nodes.filter((node) => node.value > 0);
+  if (visibleNodes.length === 0) {
     return [];
   }
 
-  const parentNodes = nodes.filter((node) => node.depth === 1);
+  const parentNodes = visibleNodes.filter((node) => node.depth === 1);
   const totalValue = parentNodes.reduce((sum, node) => sum + node.value, 0);
   const childGroups = new Map<string, TreeMapNode[]>();
 
-  for (const node of nodes) {
+  for (const node of visibleNodes) {
     if (node.depth !== 2 || !node.parentSymbol) {
       continue;
     }
@@ -251,13 +267,9 @@ export function buildFlatHoldingTreeMapNodes({
     return [];
   }
 
-  const colorMap = assignColors(
-    visibleRows.map((row) => row.symbol).sort((a, b) => a.localeCompare(b))
-  );
-
   const children: FlatHierarchyData[] = visibleRows.map((row) => ({
     ...row,
-    color: colorMap[row.symbol] ?? DEFAULT_TREEMAP_COLOR,
+    color: getColorForSymbol(row.symbol),
   }));
 
   const root = hierarchy<FlatHierarchyData>({

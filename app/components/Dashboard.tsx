@@ -13,8 +13,9 @@ import type {
   ViewMode,
 } from "@/lib/types";
 import { formatDollar, formatHeaderCurrency } from "@/lib/utils";
-import { SlidingNumber } from "./primitives/SlidingNumber";
+import { AnimatedNumber } from "./primitives/AnimatedNumber";
 import { GainLoss } from "./primitives/GainLoss";
+import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
 import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
@@ -109,35 +110,15 @@ export function Dashboard({
             >
               <div className="mb-2 flex min-w-0 items-center gap-2">
                 {isFiltered && (
-                  <button
-                    type="button"
+                  <ResetFiltersButton
                     onClick={onResetFilters}
                     className={cn(
-                      "inline-flex min-h-9 shrink-0 items-center gap-2 rounded-full px-3 py-2",
+                      "min-h-9 w-9 shrink-0 shadow-sm",
                       enableIntroAnimation && "animate-scale-in",
-                      "text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer hover-lift press-down",
                       "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
                       "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
                     )}
-                    aria-label="Reset filters"
-                    title="Reset all filters"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M18 6 6 18" />
-                      <path d="m6 6 12 12" />
-                    </svg>
-                    <span>Reset filters</span>
-                  </button>
+                  />
                 )}
                 <h1
                   className={cn(
@@ -158,15 +139,15 @@ export function Dashboard({
                 )}
               >
                 <div
-                  className="min-w-0"
+                  className="min-w-fit shrink-0"
                   title={`Market value: ${formatDollar(displayValue)}`}
                 >
-                  <SlidingNumber
+                  <AnimatedNumber
                     value={displayValue}
                     format={formatHeaderCurrency}
                     animate={enableValueAnimations}
                     className={cn(
-                      "font-bold text-text-primary",
+                      "font-bold text-text-primary whitespace-nowrap",
                       isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
                     )}
                   />

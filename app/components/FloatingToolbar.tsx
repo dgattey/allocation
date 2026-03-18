@@ -11,6 +11,7 @@ import type {
 import { hasActivePortfolioFilters } from "@/lib/portfolioFilters";
 import { cn } from "@/lib/utils";
 import { useTimeAgo } from "@/hooks/useTimeAgo";
+import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
 import { FloatingToolbarFiltersPanel } from "./toolbar/FloatingToolbarFiltersPanel";
 import {
   FilterSummaryStrip,
@@ -113,13 +114,10 @@ export function FloatingToolbar({
           <>
             <div className="flex items-center justify-between gap-3">
               {hasFilters ? (
-                <button
-                  type="button"
+                <ResetFiltersButton
                   onClick={onResetFilters}
-                  className="text-xs font-medium whitespace-nowrap text-red-400/80 transition-colors hover:text-red-300 hover-lift press-down cursor-pointer"
-                >
-                  Reset filters
-                </button>
+                  className="h-7 w-7 shrink-0 text-red-400/80 hover:text-red-300"
+                />
               ) : (
                 <span className="h-4" aria-hidden="true" />
               )}
@@ -234,13 +232,10 @@ export function FloatingToolbar({
 
             <div className="ml-auto flex shrink-0 items-center gap-3">
               {hasFilters && (
-                <button
-                  type="button"
+                <ResetFiltersButton
                   onClick={onResetFilters}
-                  className="cursor-pointer whitespace-nowrap text-xs font-medium text-red-400/80 transition-colors hover:text-red-300 hover-lift press-down"
-                >
-                  Reset filters
-                </button>
+                  className="h-7 w-7 shrink-0 text-red-400/80 hover:text-red-300"
+                />
               )}
 
               <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-white/40">

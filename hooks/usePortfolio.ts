@@ -47,7 +47,7 @@ import {
 } from "@/lib/storage";
 import {
   buildFlatHoldingTreeMapNodes,
-  filterFundTreeMapNodes,
+  filterAndRelayoutFundTreeMapNodes,
   getFundOptions,
 } from "@/lib/treemap";
 
@@ -301,7 +301,12 @@ export function usePortfolio(): UsePortfolioResult {
   );
   const filteredTreeMapNodes =
     treeMapGrouping === "fund"
-      ? filterFundTreeMapNodes(filteredFundTreeMapNodes, selectedFunds)
+      ? filterAndRelayoutFundTreeMapNodes(
+          filteredFundTreeMapNodes,
+          selectedFunds,
+          treeMapLayout.width,
+          treeMapLayout.height
+        )
       : buildFlatHoldingTreeMapNodes({
           rows: portfolioData?.tableRows ?? [],
           filters,
