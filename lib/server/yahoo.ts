@@ -250,7 +250,7 @@ async function fetchYahooDirectHoldingsForSymbol(
 
 /**
  * Fetch the direct holdings reported for a single fund/ETF symbol.
- * SEC N-PORT is preferred when supported; Yahoo topHoldings is the fallback.
+ * Yahoo topHoldings is the direct holdings source for funds and ETFs.
  */
 async function fetchDirectHoldingsForSymbolUncached(
   symbol: string,

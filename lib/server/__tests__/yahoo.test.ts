@@ -196,7 +196,7 @@ describe("yahoo fund symbol lookups", () => {
     ).toBeCloseTo(1);
   });
 
-  it("falls back to Yahoo top holdings when SEC data is unavailable", async () => {
+  it("uses Yahoo top holdings for direct fund lookups", async () => {
     mockFetchDirectFundHoldings.mockImplementation(
       async ({
         symbol,
@@ -243,7 +243,7 @@ describe("yahoo fund symbol lookups", () => {
     ]);
   });
 
-  it("passes proxy-resolved funds through SEC-backed lookup before falling back", async () => {
+  it("passes proxy-resolved funds through the direct holdings lookup", async () => {
     mockSearch
       .mockResolvedValueOnce({ quotes: [] })
       .mockResolvedValueOnce({
