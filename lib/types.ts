@@ -108,6 +108,7 @@ export interface PositionSource {
   sourceName: string;
   value: number;
   percentOfSource: number;
+  percentOfPortfolio: number;
   account: string;
   investmentType: string;
 }

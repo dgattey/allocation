@@ -12,6 +12,7 @@ import type {
   ViewMode,
 } from "@/lib/types";
 import { parseCSV } from "@/lib/parseCSV";
+import { sortTableRows } from "@/lib/tableSort";
 import { savePortfolio, loadPortfolio, clearPortfolio } from "@/lib/storage";
 import {
   buildFlatHoldingTreeMapNodes,
@@ -195,8 +196,13 @@ export function usePortfolio() {
     setFilters({ investmentTypes: [], accounts: [] });
     setSelectedFunds([]);
     setTreeMapGrouping("fund");
+    setSortConfig({ key: "totalValue", direction: "desc" });
+    setViewMode("holdings");
     mountedRef.current = false;
-    if (pollRef.current) clearInterval(pollRef.current);
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
   }
 
   function toggleExpand(symbol: string) {
@@ -287,22 +293,7 @@ function getFilteredRows(
     );
   }
 
-  const sorted = [...filtered].sort((a, b) => {
-    const key = sortConfig.key as keyof TableRow;
-    const aVal = a[key];
-    const bVal = b[key];
-
-    if (typeof aVal === "number" && typeof bVal === "number") {
-      return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
-    }
-    if (typeof aVal === "string" && typeof bVal === "string") {
-      const cmp = aVal.localeCompare(bVal);
-      return sortConfig.direction === "asc" ? cmp : -cmp;
-    }
-    return 0;
-  });
-
-  return sorted;
+  return sortTableRows(filtered, sortConfig);
 }
 
 function getSelectedFundsSummary(
