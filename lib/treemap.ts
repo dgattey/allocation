@@ -1,12 +1,11 @@
 import { hierarchy, treemap, treemapSquarify } from "d3-hierarchy";
 import { assignColors, DEFAULT_TREEMAP_COLOR } from "./colors";
+import { isFundInvestmentType } from "./investmentTypes";
 import {
   matchesRowSourceFundSelection,
   matchesSourceFilters,
 } from "./portfolioFilters";
 import type { FilterState, FundOption, TableRow, TreeMapNode } from "./types";
-
-const FUND_TYPES = new Set(["ETFs", "Mutual Funds", "Others"]);
 
 interface FlatNodeData {
   symbol: string;
@@ -30,10 +29,6 @@ interface FlatHierarchyData extends Partial<FlatNodeData> {
 interface RelayoutHierarchyData {
   node: TreeMapNode;
   children?: RelayoutHierarchyData[];
-}
-
-export function isFundInvestmentType(type?: string): boolean {
-  return !!type && FUND_TYPES.has(type);
 }
 
 export function getFundOptions(nodes: TreeMapNode[]): FundOption[] {

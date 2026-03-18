@@ -45,7 +45,7 @@ function makeTreeMapNode(overrides: Partial<TreeMapNode>): TreeMapNode {
   };
 }
 
-describe("usePortfolio filtering helpers", () => {
+describe("portfolio selectors", () => {
   it("recalculates row totals from matching account sources", () => {
     const rows: TableRow[] = [
       makeRow({

@@ -30,6 +30,7 @@ function makePortfolioReturn(
 ): UsePortfolioResult {
   const base: UsePortfolioResult = {
     hasData: false,
+    isMobile: false,
     isLoading: false,
     error: null,
     portfolioData: null,
@@ -43,21 +44,22 @@ function makePortfolioReturn(
     toggleExpand: vi.fn(),
     uploadFile: vi.fn(),
     clearData: vi.fn(),
-    viewMode: "holdings",
+    viewMode: "holdings" as const,
     setViewMode: vi.fn(),
     treeMapGrouping: "fund" as const,
     setTreeMapGrouping: vi.fn(),
     selectedFunds: [],
     toggleFundSelection: vi.fn(),
     clearSelectedFunds: vi.fn(),
+    resetFilters: vi.fn(),
     fundOptions: [],
     activeSummary: null,
-  };
-
-  return {
-    ...base,
+    treeMapWidth: 1200,
+    treeMapHeight: 400,
     ...overrides,
   };
+
+  return base;
 }
 
 describe("Home page routing", () => {

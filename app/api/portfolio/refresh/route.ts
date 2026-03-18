@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import type { FidelityPosition } from "@/lib/types";
-import { fetchQuotes, fetchAllHoldings } from "@/lib/server/yahoo";
-import { computePortfolioData } from "@/lib/server/aggregation";
+import { buildPortfolioData } from "@/lib/server/portfolioData";
 
 /**
  * Refresh route — same as the main portfolio route but optimized for polling.
- * Holdings are cached for 1hr so this mainly re-fetches quotes.
+ * Holdings and quotes are cached through Cache Components.
  */
 export async function POST(request: Request) {
   try {
@@ -21,48 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const allSymbols = [...new Set(positions.map((p) => p.symbol))];
-
-    const fundSymbols = positions
-      .filter(
-        (p) =>
-          p.investmentType === "ETFs" ||
-          p.investmentType === "Mutual Funds" ||
-          p.investmentType === "Others"
-      )
-      .map((p) => ({ symbol: p.symbol, description: p.description }));
-    const uniqueFundSymbols = Array.from(
-      new Map(fundSymbols.map((fund) => [fund.symbol, fund])).values()
-    );
-
-    // Holdings will be served from cache (1hr TTL)
-    // Quotes will be re-fetched (4s TTL)
-    const [quotes, holdings] = await Promise.all([
-      fetchQuotes(allSymbols),
-      fetchAllHoldings(uniqueFundSymbols),
-    ]);
-
-    // Fetch quotes for underlying holdings
-    const holdingSymbols = new Set<string>();
-    for (const fundHoldings of Object.values(holdings)) {
-      for (const h of fundHoldings) {
-        if (h.symbol && !quotes[h.symbol]) {
-          holdingSymbols.add(h.symbol);
-        }
-      }
-    }
-    if (holdingSymbols.size > 0) {
-      const holdingQuotes = await fetchQuotes([...holdingSymbols]);
-      Object.assign(quotes, holdingQuotes);
-    }
-
-    const portfolioData = computePortfolioData(
-      positions,
-      quotes,
-      holdings,
-      width,
-      height
-    );
+    const portfolioData = await buildPortfolioData(positions, width, height);
 
     return NextResponse.json(portfolioData);
   } catch (error) {

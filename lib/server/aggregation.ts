@@ -19,6 +19,7 @@ import {
   DEFAULT_TREEMAP_COLOR,
   getChildColor,
 } from "../colors";
+import { isFundInvestmentType } from "../investmentTypes";
 
 // === Intermediate types for treemap hierarchy ===
 
@@ -112,10 +113,7 @@ function buildTreeMap(
   height: number
 ): TreeMapNode[] {
   const funds = positions.filter(
-    (p) =>
-      p.investmentType === "ETFs" ||
-      p.investmentType === "Mutual Funds" ||
-      p.investmentType === "Others"
+    (position) => isFundInvestmentType(position.investmentType)
   );
   const stocks = positions.filter((p) => p.investmentType === "Stocks");
   const cash = positions.filter((p) => p.investmentType === "Cash");

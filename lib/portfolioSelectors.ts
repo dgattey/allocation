@@ -96,7 +96,9 @@ export function getActivePortfolioSummary(
 
 export function getFilteredTreeMapNodes(
   portfolioData: PortfolioData | null,
-  filters: FilterState
+  filters: FilterState,
+  width = PORTFOLIO_TREEMAP_WIDTH,
+  height = PORTFOLIO_TREEMAP_HEIGHT
 ): TreeMapNode[] {
   if (!portfolioData) {
     return [];
@@ -110,8 +112,8 @@ export function getFilteredTreeMapNodes(
     portfolioData.treeMapNodes.filter((node) =>
       matchesTreeMapNodeFilters(node, filters)
     ),
-    PORTFOLIO_TREEMAP_WIDTH,
-    PORTFOLIO_TREEMAP_HEIGHT
+    width,
+    height
   );
 }
 
