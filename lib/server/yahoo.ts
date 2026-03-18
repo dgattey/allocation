@@ -1,6 +1,6 @@
 import type { QuoteData, FundHolding } from "../types";
 
-import { unstable_cache } from "next/cache";
+import { cacheLife } from "next/cache";
 import YahooFinance from "yahoo-finance2";
 import { fetchDirectFundHoldings } from "./holdings";
 
@@ -187,14 +187,18 @@ async function fetchQuotesUncached(
   return result;
 }
 
-const fetchQuotesCached = unstable_cache(
-  fetchQuotesUncached,
-  ["yahoo-quotes-batch-v1"],
-  {
+async function fetchQuotesCached(
+  symbols: string[]
+): Promise<Record<string, QuoteData>> {
+  "use cache";
+  cacheLife({
+    stale: 0,
     revalidate: QUOTE_REVALIDATE_SECONDS,
-    tags: ["yahoo-quotes"],
-  }
-);
+    expire: 60,
+  });
+
+  return fetchQuotesUncached(symbols);
+}
 
 export async function fetchQuotes(
   symbols: string[]
@@ -295,15 +299,19 @@ async function fetchDirectHoldingsForSymbolUncached(
   return [];
 }
 
-const fetchDirectHoldingsForSymbolCached = unstable_cache(
-  async (symbol: string, description: string | null) =>
-    fetchDirectHoldingsForSymbolUncached(symbol, description ?? undefined),
-  ["hybrid-direct-holdings-v1"],
-  {
+async function fetchDirectHoldingsForSymbolCached(
+  symbol: string,
+  description: string | null
+): Promise<FundHolding[]> {
+  "use cache";
+  cacheLife({
+    stale: 5 * 60,
     revalidate: HOLDINGS_REVALIDATE_SECONDS,
-    tags: ["hybrid-direct-holdings"],
-  }
-);
+    expire: 2 * 24 * 60 * 60,
+  });
+
+  return fetchDirectHoldingsForSymbolUncached(symbol, description ?? undefined);
+}
 
 async function fetchDirectHoldingsForSymbol(
   symbol: string,

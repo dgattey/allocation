@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+import { cacheLife } from "next/cache";
 import type { FundHolding } from "@/lib/types";
 
 const SEC_BASE_URL = "https://www.sec.gov";
@@ -224,14 +224,16 @@ async function loadSeriesClassMappingsUncached(): Promise<SecFundMapping[]> {
     });
 }
 
-const loadSeriesClassMappingsCached = unstable_cache(
-  loadSeriesClassMappingsUncached,
-  ["sec-series-class-mappings-v1"],
-  {
+async function loadSeriesClassMappingsCached(): Promise<SecFundMapping[]> {
+  "use cache";
+  cacheLife({
+    stale: 60 * 60,
     revalidate: SERIES_CLASS_REVALIDATE_SECONDS,
-    tags: ["sec-series-class-mappings"],
-  }
-);
+    expire: SERIES_CLASS_REVALIDATE_SECONDS * 2,
+  });
+
+  return loadSeriesClassMappingsUncached();
+}
 
 async function loadSeriesClassMappings(): Promise<SecFundMapping[]> {
   if (seriesClassMappingsOverride) {
@@ -404,14 +406,18 @@ async function fetchSecNportHoldingsForSeriesUncached(
   };
 }
 
-const fetchSecNportHoldingsForSeriesCached = unstable_cache(
-  fetchSecNportHoldingsForSeriesUncached,
-  ["sec-series-holdings-v1"],
-  {
+async function fetchSecNportHoldingsForSeriesCached(
+  seriesId: string
+): Promise<SecCachedHoldings | null> {
+  "use cache";
+  cacheLife({
+    stale: 5 * 60,
     revalidate: HOLDINGS_REVALIDATE_SECONDS,
-    tags: ["sec-series-holdings"],
-  }
-);
+    expire: 7 * 24 * 60 * 60 * 2,
+  });
+
+  return fetchSecNportHoldingsForSeriesUncached(seriesId);
+}
 
 async function fetchSecNportHoldingsForSeries(
   seriesId: string
