@@ -16,6 +16,30 @@ vi.mock("yahoo-finance2", () => {
   };
 });
 
+describe("shouldSkipYahooSymbol", () => {
+  it("keeps exchange-qualified numeric symbols fetchable", async () => {
+    const { shouldSkipYahooSymbol } = await import("../yahoo");
+
+    expect(shouldSkipYahooSymbol("6501.T")).toBe(false);
+    expect(shouldSkipYahooSymbol("8316.T")).toBe(false);
+    expect(shouldSkipYahooSymbol("0700.HK")).toBe(false);
+  });
+
+  it("skips likely internal non-market identifiers", async () => {
+    const { shouldSkipYahooSymbol } = await import("../yahoo");
+
+    expect(shouldSkipYahooSymbol("12345")).toBe(true);
+    expect(shouldSkipYahooSymbol("09261F572")).toBe(true);
+  });
+
+  it("skips malformed symbols", async () => {
+    const { shouldSkipYahooSymbol } = await import("../yahoo");
+
+    expect(shouldSkipYahooSymbol("ABC DEF")).toBe(true);
+    expect(shouldSkipYahooSymbol("TOO-LONG-SYMBOL-123")).toBe(true);
+  });
+});
+
 describe("yahoo fund symbol lookups", () => {
   beforeEach(() => {
     vi.resetModules();
