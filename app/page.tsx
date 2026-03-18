@@ -44,7 +44,7 @@ export default function Home() {
               Portfolio allocation
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted md:text-base">
-              Open a saved file or add more exports.
+              Visualize your Fidelity portfolio allocations, live and in detail.
             </p>
           </div>
         </section>
