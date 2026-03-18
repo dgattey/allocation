@@ -17,6 +17,7 @@ import { GainLoss } from "./primitives/GainLoss";
 import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
+import { HeaderFundSelector } from "./HeaderFundSelector";
 import { cn } from "@/lib/utils";
 
 interface DashboardProps {
@@ -173,6 +174,13 @@ export function Dashboard({
                   size="md"
                 />
               </div>
+
+              <HeaderFundSelector
+                funds={fundOptions}
+                selectedFunds={selectedFunds}
+                onToggleFund={onToggleFund}
+                onClearFunds={onClearFunds}
+              />
             </div>
 
             {isLoading && (
@@ -219,10 +227,6 @@ export function Dashboard({
         onViewModeChange={onViewModeChange}
         treeMapGrouping={treeMapGrouping}
         onTreeMapGroupingChange={onTreeMapGroupingChange}
-        funds={fundOptions}
-        selectedFunds={selectedFunds}
-        onToggleFund={onToggleFund}
-        onClearFunds={onClearFunds}
       />
     </div>
   );

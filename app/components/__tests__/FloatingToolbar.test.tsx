@@ -21,66 +21,40 @@ function makeProps() {
     onViewModeChange: vi.fn(),
     treeMapGrouping: "fund" as const,
     onTreeMapGroupingChange: vi.fn(),
-    funds: [
-      {
-        symbol: "VTI",
-        name: "Vanguard Total Stock Market",
-        color: "#4E9999",
-        value: 1000,
-        hasChildren: true,
-      },
-      {
-        symbol: "SPY",
-        name: "SPDR S&P 500",
-        color: "#8B74AB",
-        value: 800,
-        hasChildren: true,
-      },
-    ],
-    selectedFunds: [],
-    onToggleFund: vi.fn(),
-    onClearFunds: vi.fn(),
   };
 }
 
 describe("FloatingToolbar", () => {
-  it("switches treemap grouping and toggles fund chips", () => {
+  it("switches treemap grouping", () => {
     const props = makeProps();
     render(<FloatingToolbar {...props} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Flat" }));
     expect(props.onTreeMapGroupingChange).toHaveBeenCalledWith("holding");
-
-    fireEvent.click(screen.getByRole("button", { name: "VTI" }));
-    expect(props.onToggleFund).toHaveBeenCalledWith("VTI");
-
-    fireEvent.click(screen.getByRole("button", { name: "All funds" }));
-    expect(props.onClearFunds).toHaveBeenCalledTimes(1);
   });
 
-  it("resets filters and fund selections together", () => {
+  it("resets only the active filters", () => {
     const props = makeProps();
     props.filters = {
       investmentTypes: ["Stocks"],
       accounts: ["Brokerage"],
     };
-    props.selectedFunds = ["VTI"];
 
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));
 
     expect(props.onFiltersChange).toHaveBeenCalledWith({
       investmentTypes: [],
       accounts: [],
     });
-    expect(props.onClearFunds).toHaveBeenCalledTimes(1);
   });
 
-  it("updates the account filter from the simplified select", () => {
+  it("opens the filter panel and updates the account filter", () => {
     const props = makeProps();
     render(<FloatingToolbar {...props} />);
 
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     fireEvent.change(screen.getByRole("combobox"), {
       target: { value: "Roth IRA" },
     });
@@ -89,5 +63,19 @@ describe("FloatingToolbar", () => {
       investmentTypes: [],
       accounts: ["Roth IRA"],
     });
+  });
+
+  it("shows the active filter count in the filters button", () => {
+    const props = makeProps();
+    props.filters = {
+      investmentTypes: ["Stocks", "ETFs"],
+      accounts: ["Brokerage"],
+    };
+
+    render(<FloatingToolbar {...props} />);
+
+    expect(
+      screen.getByRole("button", { name: "Filters (3)" })
+    ).toBeInTheDocument();
   });
 });
