@@ -13,7 +13,13 @@ import type {
 } from "@/lib/types";
 import { parseCSV } from "@/lib/parseCSV";
 import { sortTableRows } from "@/lib/tableSort";
-import { savePortfolio, loadPortfolio, clearPortfolio } from "@/lib/storage";
+import {
+  savePortfolio,
+  savePortfolioData,
+  loadPortfolio,
+  loadPortfolioData,
+  clearPortfolio,
+} from "@/lib/storage";
 import {
   buildFlatHoldingTreeMapNodes,
   filterFundTreeMapNodes,
@@ -69,6 +75,7 @@ export function usePortfolio() {
         }
         const data: PortfolioData = await res.json();
         setPortfolioData(data);
+        savePortfolioData(data);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch portfolio data:", err);
@@ -86,7 +93,11 @@ export function usePortfolio() {
 
     const saved = loadPortfolio();
     if (saved) {
+      const cachedPortfolioData = loadPortfolioData();
       setPositions(saved);
+      if (cachedPortfolioData) {
+        setPortfolioData(cachedPortfolioData);
+      }
       fetchData(saved, "/api/portfolio").finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
