@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -49,6 +50,10 @@ import {
   filterAndRelayoutFundTreeMapNodes,
   getFundOptions,
 } from "@/lib/treemap";
+import {
+  buildFilterSearchParams,
+  parseFiltersFromSearchParams,
+} from "@/lib/urlFilters";
 
 function createDefaultFilters(): FilterState {
   return {
@@ -126,6 +131,18 @@ export interface UsePortfolioResult {
 }
 
 export function usePortfolio(): UsePortfolioResult {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const parsedFromUrl = parseFiltersFromSearchParams(searchParams);
+  const [filters, setFiltersState] = useState<FilterState>(() =>
+    parsedFromUrl ? parsedFromUrl.filters : createDefaultFilters()
+  );
+  const [selectedFunds, setSelectedFundsState] = useState<string[]>(() =>
+    parsedFromUrl?.selectedFunds ?? []
+  );
+
   const [isMobile, setIsMobile] = useState(getInitialIsMobile);
   const [positions, setPositions] = useState<FidelityPosition[] | null>(null);
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
@@ -133,13 +150,11 @@ export function usePortfolio(): UsePortfolioResult {
   const [error, setError] = useState<string | null>(null);
   const [restoredFromStorage, setRestoredFromStorage] = useState(false);
 
-  const [filters, setFiltersState] = useState<FilterState>(createDefaultFilters);
   const [sortConfig, setSortConfig] = useState<SortConfig>(createDefaultSortConfig);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("holdings");
   const [treeMapGrouping, setTreeMapGrouping] =
     useState<TreeMapGrouping>("fund");
-  const [selectedFunds, setSelectedFundsState] = useState<string[]>([]);
 
   const mountedRef = useRef(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -150,6 +165,45 @@ export function usePortfolio(): UsePortfolioResult {
   positionsRef.current = positions;
   filtersRef.current = filters;
   selectedFundsRef.current = selectedFunds;
+
+  // Sync URL → state when user navigates (e.g. back/forward)
+  useEffect(() => {
+    const parsed = parseFiltersFromSearchParams(searchParams);
+    if (parsed) {
+      setFiltersState(parsed.filters);
+      setSelectedFundsState(parsed.selectedFunds);
+    } else {
+      setFiltersState(createDefaultFilters());
+      setSelectedFundsState([]);
+    }
+  }, [searchParams]);
+
+  // Sync state → URL when filters change
+  const urlUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const desired = buildFilterSearchParams(filters, selectedFunds);
+    const current = searchParams.toString();
+    if (desired === current) return;
+
+    const updateUrl = () => {
+      const url = desired ? `${pathname}?${desired}` : pathname;
+      router.replace(url, { scroll: false });
+    };
+
+    const hasSearchChange =
+      (filters.searchQuery ?? "") !==
+      (searchParams.get("q") ?? "");
+    if (hasSearchChange) {
+      urlUpdateTimeoutRef.current = setTimeout(updateUrl, 150);
+      return () => {
+        if (urlUpdateTimeoutRef.current) {
+          clearTimeout(urlUpdateTimeoutRef.current);
+          urlUpdateTimeoutRef.current = null;
+        }
+      };
+    }
+    updateUrl();
+  }, [filters, selectedFunds, pathname, router, searchParams]);
 
   const treeMapLayout = isMobile
     ? MOBILE_TREE_MAP_LAYOUT

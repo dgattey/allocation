@@ -1,11 +1,20 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { UploadView } from "./components/UploadView";
 import { Dashboard } from "./components/Dashboard";
 import { FetchStatusBadge } from "./components/primitives/FetchStatusBadge";
 
 export default function Home() {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <PortfolioContent />
+    </Suspense>
+  );
+}
+
+function PortfolioContent() {
   const portfolio = usePortfolio();
 
   if (!portfolio.hasData) {
