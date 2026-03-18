@@ -101,8 +101,10 @@ describe("Dashboard clear action", () => {
     );
 
     expect(
-      screen.getByText(/showing underlying holdings derived from target-year fund/i)
+      screen.getByText(/showing holdings derived from/i)
     ).toBeInTheDocument();
-    expect(screen.getByText("09261F572")).toBeInTheDocument();
+    expect(
+      screen.getByText("BTC LPATH IDX 2055 M (09261F572)")
+    ).toBeInTheDocument();
   });
 });

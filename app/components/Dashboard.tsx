@@ -95,9 +95,9 @@ export function Dashboard({
                 </h1>
                 {focusedSummary && focusedFund && (
                   <p className="mt-2 max-w-2xl text-xs leading-5 text-text-muted">
-                    Showing underlying holdings derived from target-year fund{" "}
+                    Showing holdings derived from{" "}
                     <span className="font-medium text-text-primary">
-                      {focusedFund}
+                      {focusedSummary.name} ({focusedFund})
                     </span>
                     . Values below are allocated from this fund so it is clear
                     where the breakdown comes from.
