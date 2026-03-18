@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,35 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
           <p className="text-text-muted text-sm mb-8">
             Visualize your investment portfolio breakdown
           </p>
+
+          <div className="mb-8 rounded-2xl border border-border/70 bg-surface-hover/70 p-4 shadow-[var(--shadow)]">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-shrink-0">
+                <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] border border-white/10 bg-[#151922] shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
+                  <Image
+                    src="/icon.svg"
+                    alt="Portfolio treemap app icon preview"
+                    width={44}
+                    height={44}
+                    className="h-11 w-11"
+                    priority
+                  />
+                </div>
+                <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/25 bg-accent text-white shadow-[var(--shadow-md)]">
+                  <MiniUploadIcon />
+                </span>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-text-primary">
+                  Upload a CSV to build this treemap
+                </p>
+                <p className="text-xs leading-5 text-text-muted">
+                  The favicon matches the portfolio blocks you see after importing
+                  your positions.
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Instructions */}
           <div className="space-y-3 mb-8">
@@ -162,6 +192,26 @@ function UploadIcon() {
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  );
+}
+
+function MiniUploadIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 16V4" />
+      <path d="M7 9l5-5 5 5" />
+      <path d="M5 20h14" />
     </svg>
   );
 }

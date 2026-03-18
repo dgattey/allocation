@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+
+vi.mock("next/image", () => ({
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img {...props} />
+  ),
+}));
+
 import { UploadView } from "../UploadView";
 
 describe("UploadView", () => {
@@ -8,6 +16,21 @@ describe("UploadView", () => {
     expect(screen.getByText("Portfolio Allocation")).toBeInTheDocument();
     expect(
       screen.getByText("Visualize your investment portfolio breakdown")
+    ).toBeInTheDocument();
+  });
+
+  it("shows how the upload connects to the treemap favicon", () => {
+    render(<UploadView onFileSelect={vi.fn()} />);
+    expect(
+      screen.getByAltText("Portfolio treemap app icon preview")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Upload a CSV to build this treemap")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The favicon matches the portfolio blocks you see after importing your positions."
+      )
     ).toBeInTheDocument();
   });
 
