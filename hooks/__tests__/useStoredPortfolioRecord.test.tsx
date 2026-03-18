@@ -7,6 +7,12 @@ import {
 import type { FidelityPosition, PortfolioData } from "@/lib/types";
 import { useStoredPortfolioRecord } from "../useStoredPortfolioRecord";
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/",
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
 const positions: FidelityPosition[] = [
   {
     accountNumber: "TEST-0001",
