@@ -18,6 +18,8 @@ interface PortfolioTableProps {
   expandedRows: Set<string>;
   onToggleExpand: (symbol: string) => void;
   isMobile?: boolean;
+  enableIntroAnimation?: boolean;
+  enableValueAnimations?: boolean;
 }
 
 const SORTABLE_COLUMNS: {
@@ -45,6 +47,8 @@ export function PortfolioTable({
   expandedRows,
   onToggleExpand,
   isMobile = false,
+  enableIntroAnimation = true,
+  enableValueAnimations = true,
 }: PortfolioTableProps) {
   if (rows.length === 0) {
     return (
@@ -100,6 +104,7 @@ export function PortfolioTable({
               row={row}
               isExpanded={expandedRows.has(row.symbol)}
               onToggle={() => onToggleExpand(row.symbol)}
+              enableValueAnimations={enableValueAnimations}
             />
           ))}
         </div>
@@ -109,7 +114,10 @@ export function PortfolioTable({
 
   return (
     <div
-      className="w-full overflow-x-auto rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-md)] animate-soft-rise"
+      className={cn(
+        "w-full overflow-x-auto rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-md)]",
+        enableIntroAnimation && "animate-soft-rise"
+      )}
       style={{ "--enter-delay": "80ms" } as CSSProperties}
     >
       <table className="w-full border-collapse min-w-[1040px]">
@@ -171,6 +179,8 @@ export function PortfolioTable({
               index={idx}
               isExpanded={expandedRows.has(row.symbol)}
               onToggle={() => onToggleExpand(row.symbol)}
+              enableIntroAnimation={enableIntroAnimation}
+              enableValueAnimations={enableValueAnimations}
             />
           ))}
         </tbody>
@@ -183,10 +193,12 @@ function MobileRowCard({
   row,
   isExpanded,
   onToggle,
+  enableValueAnimations = true,
 }: {
   row: TableRow;
   isExpanded: boolean;
   onToggle: () => void;
+  enableValueAnimations?: boolean;
 }) {
   return (
     <article className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
@@ -219,6 +231,7 @@ function MobileRowCard({
           <AnimatedNumber
             value={row.totalValue}
             format={formatDollar}
+            animate={enableValueAnimations}
             className="text-sm font-semibold text-text-primary"
           />
         </MetricCell>
@@ -231,6 +244,7 @@ function MobileRowCard({
           <AnimatedNumber
             value={row.currentPrice}
             format={formatPrice}
+            animate={enableValueAnimations}
             className="text-sm text-text-primary"
           />
         </MetricCell>
@@ -331,11 +345,15 @@ function TableRowGroup({
   index,
   isExpanded,
   onToggle,
+  enableIntroAnimation = true,
+  enableValueAnimations = true,
 }: {
   row: TableRow;
   index: number;
   isExpanded: boolean;
   onToggle: () => void;
+  enableIntroAnimation?: boolean;
+  enableValueAnimations?: boolean;
 }) {
   const isEven = index % 2 === 0;
 
@@ -344,7 +362,8 @@ function TableRowGroup({
       {/* Main row */}
       <tr
         className={cn(
-          "group border-b border-border-subtle transition-all duration-150 animate-soft-rise",
+          "group border-b border-border-subtle transition-all duration-150",
+          enableIntroAnimation && "animate-soft-rise",
           isEven ? "bg-transparent" : "bg-surface-hover/30",
           "hover:bg-surface-hover/60",
           row.isExpandable && "cursor-pointer"
@@ -399,6 +418,7 @@ function TableRowGroup({
           <AnimatedNumber
             value={row.totalValue}
             format={formatDollar}
+            animate={enableValueAnimations}
             className="text-sm font-medium text-text-primary"
           />
         </td>
@@ -411,6 +431,7 @@ function TableRowGroup({
           <AnimatedNumber
             value={row.currentPrice}
             format={formatPrice}
+            animate={enableValueAnimations}
             className="text-sm text-text-primary"
           />
         </td>

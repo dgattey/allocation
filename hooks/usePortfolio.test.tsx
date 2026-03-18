@@ -55,6 +55,7 @@ describe("usePortfolio startup cache restore", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("restores cached dashboard data before the refresh request finishes", async () => {
@@ -69,15 +70,18 @@ describe("usePortfolio startup cache restore", () => {
         })
     );
     vi.stubGlobal("fetch", fetchMock);
+    const scrollToSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
 
     const { result } = renderHook(() => usePortfolio());
 
     await waitFor(() => {
       expect(result.current.hasData).toBe(true);
       expect(result.current.portfolioData).toEqual(cachedData);
+      expect(result.current.restoredFromStorage).toBe(true);
     });
 
     expect(result.current.isLoading).toBe(true);
+    expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
     expect(fetchMock).toHaveBeenCalledWith("/api/portfolio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

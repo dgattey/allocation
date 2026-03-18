@@ -57,6 +57,7 @@ export function usePortfolio() {
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [restoredFromStorage, setRestoredFromStorage] = useState(false);
 
   // UI state
   const [filters, setFiltersState] = useState<FilterState>({
@@ -136,7 +137,9 @@ export function usePortfolio() {
 
     const saved = loadPortfolio();
     if (saved) {
+      resetInitialScrollPosition();
       const cachedPortfolioData = loadPortfolioData();
+      setRestoredFromStorage(true);
       setPositions(saved);
       if (cachedPortfolioData) {
         setPortfolioData(cachedPortfolioData);
@@ -268,6 +271,7 @@ export function usePortfolio() {
     setPositions(null);
     setPortfolioData(null);
     setError(null);
+    setRestoredFromStorage(false);
     setExpandedRows(new Set());
     setFiltersState({ investmentTypes: [], accounts: [] });
     setSelectedFundsState([]);
@@ -346,6 +350,7 @@ export function usePortfolio() {
     isMobile,
     isLoading,
     error,
+    restoredFromStorage,
     portfolioData,
     filteredRows,
     filteredTreeMapNodes,
@@ -370,6 +375,20 @@ export function usePortfolio() {
     treeMapHeight: treeMapLayout.height,
     activeSummary,
   };
+}
+
+function resetInitialScrollPosition() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const previousScrollRestoration = window.history.scrollRestoration;
+  window.history.scrollRestoration = "manual";
+  window.scrollTo(0, 0);
+
+  window.setTimeout(() => {
+    window.history.scrollRestoration = previousScrollRestoration;
+  }, 0);
 }
 
 // Pure functions
