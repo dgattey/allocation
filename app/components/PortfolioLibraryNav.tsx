@@ -19,28 +19,27 @@ export function PortfolioLibraryNav({
   className,
 }: PortfolioLibraryNavProps) {
   return (
-    <section
-      className={cn(
-        "rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow)]",
-        className
-      )}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-text-primary">Saved portfolios</p>
-          <p className="text-xs text-text-muted">
-            Pick one to visualize or delete it here. Recent uploads stay cached,
-            older ones keep only the source positions.
-          </p>
-        </div>
+    <section className={cn("space-y-4", className)}>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
+          Saved files
+        </p>
+        <h2 className="mt-1 text-2xl font-semibold text-text-primary">
+          Choose a portfolio to open
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
+          Open any saved Fidelity export from here, or delete one you do not
+          need. Recent uploads stay cached; older ones keep only the source
+          positions.
+        </p>
       </div>
 
       {portfolios.length === 0 ? (
-        <p className="mt-4 rounded-xl border border-dashed border-border px-4 py-6 text-sm text-text-muted">
+        <p className="rounded-2xl border border-dashed border-border px-5 py-8 text-sm text-text-muted">
           No portfolios uploaded yet.
         </p>
       ) : (
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           {portfolios.map((portfolio) => {
             const isActive = portfolio.id === activePortfolioId;
 
@@ -48,10 +47,10 @@ export function PortfolioLibraryNav({
               <div
                 key={portfolio.id}
                 className={cn(
-                  "rounded-xl border p-4 transition-colors",
+                  "rounded-2xl border p-4 transition-colors",
                   isActive
                     ? "border-accent bg-accent-bg/60"
-                    : "border-border/70 bg-surface-hover/40"
+                    : "border-border/70 bg-bg/70 hover:border-accent/40 hover:bg-surface-hover/60"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">

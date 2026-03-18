@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -46,51 +45,28 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
 
   return (
     <div
-      className="flex items-center justify-center py-8"
+      className="animate-soft-rise"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="w-full max-w-lg animate-slide-up">
-        {/* Card */}
-        <div className="bg-surface rounded-2xl border border-border/60 p-8 shadow-[var(--shadow-lg)]">
-          <h1 className="text-2xl font-bold text-text-primary mb-1">
-            Add portfolios
-          </h1>
-          <p className="text-text-muted text-sm mb-8">
-            Import one or more Fidelity exports for the picker.
-          </p>
-
-          <div className="mb-8 rounded-2xl border border-border/70 bg-surface-hover/70 p-4 shadow-[var(--shadow)]">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-shrink-0">
-                <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] border border-white/10 bg-[#151922] shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
-                  <Image
-                    src="/icon.svg"
-                    alt="Portfolio preview graphic"
-                    width={44}
-                    height={44}
-                    className="h-11 w-11"
-                    priority
-                  />
-                </div>
-                <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/25 bg-accent text-white shadow-[var(--shadow-md)]">
-                  <MiniUploadIcon />
-                </span>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-text-primary">
-                  Import your positions CSV
-                </p>
-                <p className="text-xs leading-5 text-text-muted">
-                  Upload one or more Fidelity exports to build a saved library.
-                </p>
-              </div>
-            </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)] lg:items-start">
+        <div className="space-y-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-muted">
+              Add files
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold text-text-primary">
+              Import portfolio CSVs
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
+              Add one or more Fidelity exports to update the picker. Once they
+              are uploaded, you can open any saved file in the portfolio
+              visualizer.
+            </p>
           </div>
 
-          {/* Instructions */}
-          <div className="space-y-3 mb-8">
+          <div className="space-y-3">
             <Step number={1}>
               Log in to{" "}
               <a
@@ -101,25 +77,33 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
               >
                 Fidelity Positions
               </a>
+              .
             </Step>
             <Step number={2}>
               Open the <OverflowMenuIcon /> menu on the right, then click{" "}
-              <strong>Download</strong> to export your positions as CSV
+              <strong>Download</strong>.
             </Step>
-            <Step number={3}>Drop one or more files below or click to browse</Step>
+            <Step number={3}>Drop one or more files here or click to browse.</Step>
           </div>
 
-          {/* Drop Zone */}
+          {error && (
+            <div className="rounded-2xl border border-negative/15 bg-negative-bg px-4 py-3 text-sm text-negative animate-slide-down">
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div>
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
             className={cn(
-              "w-full p-8 rounded-xl border-2 border-dashed",
-              "flex flex-col items-center justify-center gap-3",
-              "transition-all duration-200 cursor-pointer",
+              "w-full rounded-[26px] border-2 border-dashed px-6 py-12",
+              "flex min-h-[260px] flex-col items-center justify-center gap-4",
+              "transition-all duration-200 cursor-pointer bg-bg/70",
               isDragOver
-                ? "border-accent bg-accent-bg scale-[1.02]"
-                : "border-border hover:border-accent/50 hover:bg-surface-hover",
+                ? "border-accent bg-accent-bg scale-[1.01]"
+                : "border-border hover:border-accent/50 hover:bg-surface-hover/80",
               isLoading && "opacity-60 pointer-events-none"
             )}
             style={
@@ -129,16 +113,30 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
             {isLoading ? (
               <>
                 <Spinner />
-                <span className="text-sm text-text-muted">Processing...</span>
+                <div className="space-y-1 text-center">
+                  <p className="text-sm font-medium text-text-primary">
+                    Processing files
+                  </p>
+                  <p className="text-sm text-text-muted">
+                    Building the updated picker...
+                  </p>
+                </div>
               </>
             ) : (
               <>
-                <UploadIcon />
-                <span className="text-sm text-text-muted">
-                  {isDragOver
-                    ? "Drop your files here"
-                    : "Drag & drop CSVs or click to browse"}
-                </span>
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-bg text-accent">
+                  <UploadIcon />
+                </div>
+                <div className="space-y-2 text-center">
+                  <p className="text-base font-medium text-text-primary">
+                    {isDragOver
+                      ? "Drop your files here"
+                      : "Drag and drop CSVs or click to browse"}
+                  </p>
+                  <p className="text-sm text-text-muted">
+                    Multiple Fidelity exports supported.
+                  </p>
+                </div>
               </>
             )}
           </button>
@@ -147,17 +145,10 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
             ref={fileInputRef}
             type="file"
             accept=".csv,text/csv"
-          multiple
+            multiple
             className="hidden"
             onChange={handleFileChange}
           />
-
-          {/* Error */}
-          {error && (
-            <div className="mt-4 p-3 rounded-lg bg-negative-bg text-negative text-sm animate-slide-down">
-              {error}
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -173,7 +164,7 @@ function Step({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-accent-bg text-accent text-xs font-bold flex items-center justify-center mt-0.5">
+      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-bg text-xs font-bold text-accent">
         {number}
       </span>
       <span className="text-sm text-text-primary">{children}</span>
@@ -184,15 +175,15 @@ function Step({
 function UploadIcon() {
   return (
     <svg
-      width="32"
-      height="32"
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="text-text-muted"
+      className="text-current"
     >
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
@@ -220,26 +211,6 @@ function OverflowMenuIcon() {
         <circle cx="3" cy="10" r="1" fill="currentColor" />
       </svg>
     </span>
-  );
-}
-
-function MiniUploadIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 16V4" />
-      <path d="M7 9l5-5 5 5" />
-      <path d="M5 20h14" />
-    </svg>
   );
 }
 

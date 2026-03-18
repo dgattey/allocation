@@ -13,19 +13,17 @@ import { UploadView } from "../UploadView";
 describe("UploadView", () => {
   it("renders the title and instructions", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
-    expect(screen.getByText("Add portfolios")).toBeInTheDocument();
+    expect(screen.getByText("Import portfolio CSVs")).toBeInTheDocument();
     expect(
-      screen.getByText("Import one or more Fidelity exports for the picker.")
+      screen.getByText(
+        "Add one or more Fidelity exports to update the picker. Once they are uploaded, you can open any saved file in the portfolio visualizer."
+      )
     ).toBeInTheDocument();
   });
 
-  it("shows the upload preview card without icon-specific copy", () => {
+  it("renders the streamlined upload section copy", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
-    expect(screen.getByAltText("Portfolio preview graphic")).toBeInTheDocument();
-    expect(screen.getByText("Import your positions CSV")).toBeInTheDocument();
-    expect(
-      screen.getByText("Upload one or more Fidelity exports to build a saved library.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Add files")).toBeInTheDocument();
     expect(screen.queryByText(/favicon/i)).not.toBeInTheDocument();
   });
 
@@ -36,7 +34,7 @@ describe("UploadView", () => {
     expect(screen.getByText("3")).toBeInTheDocument();
     expect(screen.getByLabelText("More actions menu")).toBeInTheDocument();
     expect(screen.getByText(/menu on the right/i)).toHaveTextContent(
-      "Open the menu on the right, then click Download to export your positions as CSV"
+      "Open the menu on the right, then click Download."
     );
   });
 
@@ -52,13 +50,17 @@ describe("UploadView", () => {
 
   it("shows drop zone text in default state", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
-    expect(screen.getByText("Drag & drop CSVs or click to browse")).toBeInTheDocument();
+    expect(
+      screen.getByText("Drag and drop CSVs or click to browse")
+    ).toBeInTheDocument();
   });
 
   it("shows loading spinner when isLoading", () => {
     render(<UploadView onFilesSelect={vi.fn()} isLoading />);
-    expect(screen.getByText("Processing...")).toBeInTheDocument();
-    expect(screen.queryByText("Drag & drop CSVs or click to browse")).not.toBeInTheDocument();
+    expect(screen.getByText("Processing files")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Drag and drop CSVs or click to browse")
+    ).not.toBeInTheDocument();
   });
 
   it("shows error message when error prop provided", () => {

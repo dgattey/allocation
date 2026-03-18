@@ -71,6 +71,7 @@ describe("Home page", () => {
     render(<Home />);
 
     expect(screen.getByText("Portfolio picker")).toBeInTheDocument();
+    expect(screen.getByText("Manage portfolio files")).toBeInTheDocument();
     expect(screen.getByTestId("upload-view")).toBeInTheDocument();
     expect(screen.getByTestId("portfolio-library-nav")).toHaveTextContent("alpha");
   });
