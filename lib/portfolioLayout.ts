@@ -1,0 +1,3 @@
+export const POLL_INTERVAL_MS = 5_000;
+export const PORTFOLIO_TREEMAP_WIDTH = 1_200;
+export const PORTFOLIO_TREEMAP_HEIGHT = 400;

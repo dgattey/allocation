@@ -1,8 +1,9 @@
+import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { FloatingToolbar } from "../FloatingToolbar";
 
-function makeProps() {
+function makeProps(): ComponentProps<typeof FloatingToolbar> {
   return {
     summary: {
       totalValue: 100000,

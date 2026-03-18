@@ -1,5 +1,9 @@
 import { hierarchy, treemap, treemapSquarify } from "d3-hierarchy";
-import { assignColors } from "./colors";
+import { assignColors, DEFAULT_TREEMAP_COLOR } from "./colors";
+import {
+  matchesRowSourceFundSelection,
+  matchesSourceFilters,
+} from "./portfolioFilters";
 import type { FilterState, FundOption, TableRow, TreeMapNode } from "./types";
 
 const FUND_TYPES = new Set(["ETFs", "Mutual Funds", "Others"]);
@@ -201,7 +205,16 @@ export function buildFlatHoldingTreeMapNodes({
         continue;
       }
 
-      if (!matchesFundSelection(row.symbol, source.type, source.sourceSymbol, selectedFunds)) {
+      if (
+        !matchesRowSourceFundSelection(
+          {
+            rowSymbol: row.symbol,
+            sourceType: source.type,
+            sourceSymbol: source.sourceSymbol,
+          },
+          selectedFunds
+        )
+      ) {
         continue;
       }
 
@@ -249,7 +262,7 @@ export function buildFlatHoldingTreeMapNodes({
 
   const children: FlatHierarchyData[] = visibleRows.map((row) => ({
     ...row,
-    color: colorMap[row.symbol]?.base ?? "#64748b",
+    color: colorMap[row.symbol] ?? DEFAULT_TREEMAP_COLOR,
   }));
 
   const root = hierarchy<FlatHierarchyData>({
@@ -289,37 +302,6 @@ export function buildFlatHoldingTreeMapNodes({
     investmentType: node.data.investmentType,
     account: node.data.account,
   }));
-}
-
-function matchesSourceFilters(
-  account: string,
-  investmentType: string,
-  filters: FilterState
-): boolean {
-  const matchesAccount =
-    filters.accounts.length === 0 || filters.accounts.includes(account);
-  const matchesType =
-    filters.investmentTypes.length === 0 ||
-    filters.investmentTypes.includes(investmentType);
-
-  return matchesAccount && matchesType;
-}
-
-function matchesFundSelection(
-  rowSymbol: string,
-  sourceType: "direct" | "fund",
-  sourceSymbol: string,
-  selectedFunds: string[]
-): boolean {
-  if (selectedFunds.length === 0) {
-    return true;
-  }
-
-  if (selectedFunds.includes(sourceSymbol)) {
-    return true;
-  }
-
-  return sourceType === "direct" && selectedFunds.includes(rowSymbol);
 }
 
 function getTreeMapGroupKey(symbol: string, account?: string): string {

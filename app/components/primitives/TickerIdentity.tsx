@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { cn, hashString } from "@/lib/utils";
 
 interface TickerIdentityProps {
@@ -42,12 +43,12 @@ export function TickerIdentity({
         style={{ width: config.logo, height: config.logo }}
       >
         {!imgError ? (
-          <img
+          <Image
             src={logoUrl}
-            alt={symbol}
+            alt={`${symbol} logo`}
             width={config.logo}
             height={config.logo}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             loading="lazy"
             onError={() => setImgError(true)}
           />

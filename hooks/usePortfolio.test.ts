@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getFilteredRows, getFilteredTreeMapNodes } from "./usePortfolio";
+import {
+  getFilteredRows,
+  getFilteredTreeMapNodes,
+} from "@/lib/portfolioSelectors";
 import type { PortfolioData, TableRow, TreeMapNode } from "@/lib/types";
 
 const SORT_CONFIG = { key: "totalValue", direction: "desc" } as const;

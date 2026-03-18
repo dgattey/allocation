@@ -21,21 +21,40 @@ export function SlidingNumber({ value, format, className }: SlidingNumberProps) 
   const [slideDirection, setSlideDirection] = useState<"up" | "down">("up");
 
   useEffect(() => {
-    if (prevValue.current !== value) {
-      const dir = value > prevValue.current ? "up" : "down";
-      setSlideDirection(dir);
-      setIsTransitioning(true);
-      prevValue.current = value;
+    if (prevValue.current === value) {
+      if (display === formatted) {
+        return;
+      }
 
-      // After the exit animation, swap the text and slide it back in
-      const swapTimer = setTimeout(() => {
+      const syncFrame = window.requestAnimationFrame(() => {
+        setDisplay(formatted);
+      });
+
+      return () => window.cancelAnimationFrame(syncFrame);
+    }
+
+    const direction = value > prevValue.current ? "up" : "down";
+    prevValue.current = value;
+
+    let swapTimer: number | undefined;
+    const startFrame = window.requestAnimationFrame(() => {
+      setSlideDirection(direction);
+      setIsTransitioning(true);
+
+      // After the exit animation, swap the text and slide it back in.
+      swapTimer = window.setTimeout(() => {
         setDisplay(formatted);
         setIsTransitioning(false);
       }, 180);
+    });
 
-      return () => clearTimeout(swapTimer);
-    }
-  }, [value, formatted]);
+    return () => {
+      window.cancelAnimationFrame(startFrame);
+      if (swapTimer !== undefined) {
+        window.clearTimeout(swapTimer);
+      }
+    };
+  }, [display, formatted, value]);
 
   return (
     <span

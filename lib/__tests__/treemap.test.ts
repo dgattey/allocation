@@ -4,7 +4,7 @@ import {
   filterFundTreeMapNodes,
   getFundOptions,
 } from "../treemap";
-import type { FilterState, TableRow, TreeMapNode } from "../types";
+import type { FilterState, PositionSource, TableRow, TreeMapNode } from "../types";
 
 const NO_FILTERS: FilterState = {
   investmentTypes: [],
@@ -30,6 +30,20 @@ function makeRow(overrides: Partial<TableRow>): TableRow {
   };
 }
 
+function makeSource(overrides: Partial<PositionSource>): PositionSource {
+  return {
+    type: "direct",
+    sourceSymbol: "DIRECT",
+    sourceName: "Brokerage",
+    value: 0,
+    percentOfSource: 0,
+    percentOfPortfolio: 0,
+    account: "Brokerage",
+    investmentType: "Stocks",
+    ...overrides,
+  };
+}
+
 describe("treemap helpers", () => {
   it("merges identical holdings across direct and fund sources", () => {
     const rows: TableRow[] = [
@@ -38,7 +52,7 @@ describe("treemap helpers", () => {
         accounts: ["Brokerage", "Roth IRA"],
         investmentTypes: ["Stocks", "ETFs"],
         sources: [
-          {
+          makeSource({
             type: "direct",
             sourceSymbol: "DIRECT",
             sourceName: "Brokerage",
@@ -46,8 +60,8 @@ describe("treemap helpers", () => {
             percentOfSource: 100,
             account: "Brokerage",
             investmentType: "Stocks",
-          },
-          {
+          }),
+          makeSource({
             type: "fund",
             sourceSymbol: "VTI",
             sourceName: "Vanguard Total Stock Market",
@@ -55,8 +69,8 @@ describe("treemap helpers", () => {
             percentOfSource: 3,
             account: "Brokerage",
             investmentType: "ETFs",
-          },
-          {
+          }),
+          makeSource({
             type: "fund",
             sourceSymbol: "SPY",
             sourceName: "SPDR S&P 500",
@@ -64,8 +78,8 @@ describe("treemap helpers", () => {
             percentOfSource: 2,
             account: "Brokerage",
             investmentType: "ETFs",
-          },
-          {
+          }),
+          makeSource({
             type: "fund",
             sourceSymbol: "VTI",
             sourceName: "Vanguard Total Stock Market",
@@ -73,7 +87,7 @@ describe("treemap helpers", () => {
             percentOfSource: 3,
             account: "Roth IRA",
             investmentType: "ETFs",
-          },
+          }),
         ],
       }),
       makeRow({
@@ -84,7 +98,7 @@ describe("treemap helpers", () => {
         totalGainLossDollar: 0,
         totalGainLossPercent: 0,
         sources: [
-          {
+          makeSource({
             type: "fund",
             sourceSymbol: "VTI",
             sourceName: "Vanguard Total Stock Market",
@@ -92,7 +106,7 @@ describe("treemap helpers", () => {
             percentOfSource: 2,
             account: "Brokerage",
             investmentType: "ETFs",
-          },
+          }),
         ],
       }),
     ];
@@ -119,7 +133,7 @@ describe("treemap helpers", () => {
         accounts: ["Brokerage", "Roth IRA"],
         investmentTypes: ["Stocks", "ETFs"],
         sources: [
-          {
+          makeSource({
             type: "direct",
             sourceSymbol: "DIRECT",
             sourceName: "Brokerage",
@@ -127,8 +141,8 @@ describe("treemap helpers", () => {
             percentOfSource: 100,
             account: "Brokerage",
             investmentType: "Stocks",
-          },
-          {
+          }),
+          makeSource({
             type: "fund",
             sourceSymbol: "VTI",
             sourceName: "Vanguard Total Stock Market",
@@ -136,8 +150,8 @@ describe("treemap helpers", () => {
             percentOfSource: 3,
             account: "Brokerage",
             investmentType: "ETFs",
-          },
-          {
+          }),
+          makeSource({
             type: "fund",
             sourceSymbol: "VTI",
             sourceName: "Vanguard Total Stock Market",
@@ -145,7 +159,7 @@ describe("treemap helpers", () => {
             percentOfSource: 3,
             account: "Roth IRA",
             investmentType: "ETFs",
-          },
+          }),
         ],
       }),
       makeRow({
@@ -154,7 +168,7 @@ describe("treemap helpers", () => {
         accounts: ["Brokerage"],
         investmentTypes: ["Mutual Funds"],
         sources: [
-          {
+          makeSource({
             type: "direct",
             sourceSymbol: "DIRECT",
             sourceName: "Brokerage",
@@ -162,7 +176,7 @@ describe("treemap helpers", () => {
             percentOfSource: 100,
             account: "Brokerage",
             investmentType: "Mutual Funds",
-          },
+          }),
         ],
       }),
     ];

@@ -21,12 +21,14 @@ vi.mock("../Dashboard", () => ({
 }));
 
 import Home from "../../page";
-import { usePortfolio } from "@/hooks/usePortfolio";
+import { usePortfolio, type UsePortfolioResult } from "@/hooks/usePortfolio";
 
 const mockUsePortfolio = vi.mocked(usePortfolio);
 
-function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>> = {}) {
-  return {
+function makePortfolioReturn(
+  overrides: Partial<UsePortfolioResult> = {}
+): UsePortfolioResult {
+  const base: UsePortfolioResult = {
     hasData: false,
     isLoading: false,
     error: null,
@@ -41,6 +43,8 @@ function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>>
     toggleExpand: vi.fn(),
     uploadFile: vi.fn(),
     clearData: vi.fn(),
+    viewMode: "holdings",
+    setViewMode: vi.fn(),
     treeMapGrouping: "fund" as const,
     setTreeMapGrouping: vi.fn(),
     selectedFunds: [],
@@ -48,6 +52,10 @@ function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>>
     clearSelectedFunds: vi.fn(),
     fundOptions: [],
     activeSummary: null,
+  };
+
+  return {
+    ...base,
     ...overrides,
   };
 }
