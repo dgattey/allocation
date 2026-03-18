@@ -29,6 +29,7 @@ interface FloatingToolbarProps {
   selectedFunds: string[];
   onToggleFund: (symbol: string) => void;
   onClearFunds: () => void;
+  isMobile?: boolean;
 }
 
 export function FloatingToolbar({
@@ -44,6 +45,7 @@ export function FloatingToolbar({
   selectedFunds,
   onToggleFund,
   onClearFunds,
+  isMobile = false,
 }: FloatingToolbarProps) {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -94,79 +96,156 @@ export function FloatingToolbar({
         : `${Math.floor(secondsAgo / 60)}m ago`;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 animate-soft-rise">
+    <div
+      className={cn(
+        "animate-soft-rise",
+        isMobile
+          ? "w-full"
+          : "fixed bottom-4 left-1/2 z-40 -translate-x-1/2"
+      )}
+    >
       <div
         className={cn(
           "flex flex-col gap-3 px-4 py-3 rounded-2xl",
           "bg-[#1a1d28]/92 backdrop-blur-2xl saturate-150",
           "border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)]",
           "ring-1 ring-inset ring-white/[0.04]",
-          "w-[92vw] max-w-[44rem] lg:w-[72vw] lg:max-w-[1080px] hover-lift"
+          isMobile
+            ? "w-full max-w-none"
+            : "w-[92vw] max-w-[44rem] lg:w-[72vw] lg:max-w-[1080px] hover-lift"
         )}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <ToolbarSection label="View">
-              <SegmentButton
-                active={viewMode === "holdings"}
-                onClick={() => onViewModeChange("holdings")}
-              >
-                Holdings
-              </SegmentButton>
-              <SegmentButton
-                active={viewMode === "positions"}
-                onClick={() => onViewModeChange("positions")}
-              >
-                Positions
-              </SegmentButton>
-            </ToolbarSection>
-
-            <ToolbarSection label="Treemap">
-              <SegmentButton
-                active={treeMapGrouping === "fund"}
-                onClick={() => onTreeMapGroupingChange("fund")}
-              >
-                By fund
-              </SegmentButton>
-              <SegmentButton
-                active={treeMapGrouping === "holding"}
-                onClick={() => onTreeMapGroupingChange("holding")}
-              >
-                Flat
-              </SegmentButton>
-            </ToolbarSection>
-
-            <button
-              type="button"
-              onClick={() => setShowFilters((open) => !open)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap hover-lift press-down",
-                showFilters || hasFilters
-                  ? "bg-white/12 text-white border-white/0 shadow-sm"
-                  : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
+        {isMobile ? (
+          <>
+            <div className="flex items-center justify-between gap-3 shrink-0">
+              {hasFilters ? (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="text-xs text-red-400/80 hover:text-red-300 font-medium whitespace-nowrap cursor-pointer transition-colors hover-lift press-down"
+                >
+                  Reset filters
+                </button>
+              ) : (
+                <span className="h-4" aria-hidden="true" />
               )}
-            >
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-            </button>
-          </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            {hasFilters && (
+              <div className="flex items-center gap-1.5 text-xs text-white/40 whitespace-nowrap">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {timeAgo}
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <ToolbarSection label="View">
+                <SegmentButton
+                  active={viewMode === "holdings"}
+                  onClick={() => onViewModeChange("holdings")}
+                >
+                  Holdings
+                </SegmentButton>
+                <SegmentButton
+                  active={viewMode === "positions"}
+                  onClick={() => onViewModeChange("positions")}
+                >
+                  Positions
+                </SegmentButton>
+              </ToolbarSection>
+
+              <ToolbarSection label="Treemap">
+                <SegmentButton
+                  active={treeMapGrouping === "fund"}
+                  onClick={() => onTreeMapGroupingChange("fund")}
+                >
+                  By fund
+                </SegmentButton>
+                <SegmentButton
+                  active={treeMapGrouping === "holding"}
+                  onClick={() => onTreeMapGroupingChange("holding")}
+                >
+                  Flat
+                </SegmentButton>
+              </ToolbarSection>
+
               <button
                 type="button"
-                onClick={clearAllFilters}
-                className="text-xs text-red-400/80 hover:text-red-300 font-medium whitespace-nowrap cursor-pointer transition-colors hover-lift press-down"
+                onClick={() => setShowFilters((open) => !open)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap hover-lift press-down",
+                  showFilters || hasFilters
+                    ? "bg-white/12 text-white border-white/0 shadow-sm"
+                    : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
+                )}
               >
-                Reset filters
+                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
               </button>
-            )}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <ToolbarSection label="View">
+                <SegmentButton
+                  active={viewMode === "holdings"}
+                  onClick={() => onViewModeChange("holdings")}
+                >
+                  Holdings
+                </SegmentButton>
+                <SegmentButton
+                  active={viewMode === "positions"}
+                  onClick={() => onViewModeChange("positions")}
+                >
+                  Positions
+                </SegmentButton>
+              </ToolbarSection>
 
-            <div className="flex items-center gap-1.5 text-xs text-white/40 whitespace-nowrap">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {timeAgo}
+              <ToolbarSection label="Treemap">
+                <SegmentButton
+                  active={treeMapGrouping === "fund"}
+                  onClick={() => onTreeMapGroupingChange("fund")}
+                >
+                  By fund
+                </SegmentButton>
+                <SegmentButton
+                  active={treeMapGrouping === "holding"}
+                  onClick={() => onTreeMapGroupingChange("holding")}
+                >
+                  Flat
+                </SegmentButton>
+              </ToolbarSection>
+
+              <button
+                type="button"
+                onClick={() => setShowFilters((open) => !open)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap hover-lift press-down",
+                  showFilters || hasFilters
+                    ? "bg-white/12 text-white border-white/0 shadow-sm"
+                    : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
+                )}
+              >
+                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="text-xs text-red-400/80 hover:text-red-300 font-medium whitespace-nowrap cursor-pointer transition-colors hover-lift press-down"
+                >
+                  Reset filters
+                </button>
+              )}
+
+              <div className="flex items-center gap-1.5 text-xs text-white/40 whitespace-nowrap">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {timeAgo}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {showFilters && (
           <div className="flex flex-col gap-3 animate-soft-pop origin-bottom">
@@ -315,9 +394,9 @@ function ToolbarSection({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
       <ToolbarLabel>{label}</ToolbarLabel>
-      <div className="flex items-center rounded-lg bg-white/5 p-0.5">
+      <div className="flex flex-wrap items-center rounded-lg bg-white/5 p-0.5">
         {children}
       </div>
     </div>

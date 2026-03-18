@@ -35,10 +35,24 @@ import {
 } from "@/lib/treemap";
 
 const POLL_INTERVAL = 5000;
-const TREE_MAP_WIDTH = 1200;
-const TREE_MAP_HEIGHT = 400;
+const DESKTOP_TREE_MAP_LAYOUT = {
+  width: 1200,
+  height: 400,
+};
+const MOBILE_TREE_MAP_LAYOUT = {
+  width: 720,
+  height: 640,
+};
+const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)";
 
 export function usePortfolio() {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
+  });
   const [positions, setPositions] = useState<FidelityPosition[] | null>(null);
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,8 +76,25 @@ export function usePortfolio() {
   const mountedRef = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const positionsRef = useRef<FidelityPosition[] | null>(null);
+  const lastLayoutModeRef = useRef<"mobile" | "desktop" | null>(null);
 
   positionsRef.current = positions;
+  const treeMapLayout = isMobile
+    ? MOBILE_TREE_MAP_LAYOUT
+    : DESKTOP_TREE_MAP_LAYOUT;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches);
+    };
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const fetchData = useCallback(
     async (pos: FidelityPosition[], endpoint: string) => {
@@ -73,8 +104,8 @@ export function usePortfolio() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             positions: pos,
-            width: TREE_MAP_WIDTH,
-            height: TREE_MAP_HEIGHT,
+            width: treeMapLayout.width,
+            height: treeMapLayout.height,
           }),
         });
         if (!res.ok) {
@@ -92,7 +123,7 @@ export function usePortfolio() {
         );
       }
     },
-    []
+    [treeMapLayout]
   );
 
   useLayoutEffect(() => {
@@ -111,6 +142,18 @@ export function usePortfolio() {
       setIsLoading(false);
     }
   }, [fetchData]);
+
+  useEffect(() => {
+    const layoutMode = isMobile ? "mobile" : "desktop";
+    if (lastLayoutModeRef.current === layoutMode) return;
+    lastLayoutModeRef.current = layoutMode;
+
+    if (!positionsRef.current || !mountedRef.current) {
+      return;
+    }
+
+    void fetchData(positionsRef.current, "/api/portfolio/refresh");
+  }, [fetchData, isMobile]);
 
   useEffect(() => {
     if (!positions) {
@@ -149,6 +192,12 @@ export function usePortfolio() {
       : portfolioData?.positionRows;
 
   const filteredFundTreeMapNodes = getFilteredTreeMapNodes(portfolioData, filters);
+  const relaidOutFilteredFundTreeMapNodes = getFilteredTreeMapNodes(
+    portfolioData,
+    filters,
+    treeMapLayout.width,
+    treeMapLayout.height
+  );
   const fundOptions = getFundOptions(filteredFundTreeMapNodes);
 
   useEffect(() => {
@@ -173,15 +222,15 @@ export function usePortfolio() {
   );
   const filteredTreeMapNodes =
     treeMapGrouping === "fund"
-      ? filterFundTreeMapNodes(filteredFundTreeMapNodes, selectedFunds)
+      ? filterFundTreeMapNodes(relaidOutFilteredFundTreeMapNodes, selectedFunds)
       : buildFlatHoldingTreeMapNodes({
           rows: portfolioData?.tableRows ?? [],
           filters,
           selectedFunds,
           totalPortfolioValue:
             activeSummary?.value ?? portfolioData?.summary.totalValue ?? 0,
-          width: TREE_MAP_WIDTH,
-          height: TREE_MAP_HEIGHT,
+          width: treeMapLayout.width,
+          height: treeMapLayout.height,
         });
 
   async function uploadFile(file: File) {
@@ -213,6 +262,13 @@ export function usePortfolio() {
     setTreeMapGrouping("fund");
     setSortConfig({ key: "totalValue", direction: "desc" });
     setViewMode("holdings");
+    setIsMobile(() => {
+      if (typeof window === "undefined") {
+        return false;
+      }
+
+      return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
+    });
     mountedRef.current = false;
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -254,6 +310,7 @@ export function usePortfolio() {
 
   return {
     hasData: positions !== null,
+    isMobile,
     isLoading,
     error,
     portfolioData,
@@ -275,6 +332,8 @@ export function usePortfolio() {
     toggleFundSelection,
     clearSelectedFunds,
     fundOptions,
+    treeMapWidth: treeMapLayout.width,
+    treeMapHeight: treeMapLayout.height,
     activeSummary,
   };
 }
@@ -405,7 +464,9 @@ function matchesFundSelection(
 
 export function getFilteredTreeMapNodes(
   portfolioData: PortfolioData | null,
-  filters: FilterState
+  filters: FilterState,
+  width = DESKTOP_TREE_MAP_LAYOUT.width,
+  height = DESKTOP_TREE_MAP_LAYOUT.height
 ): TreeMapNode[] {
   if (!portfolioData) return [];
   if (filters.investmentTypes.length === 0 && filters.accounts.length === 0) {
@@ -414,8 +475,8 @@ export function getFilteredTreeMapNodes(
 
   return relayoutTreeMapNodes(
     portfolioData.treeMapNodes.filter((node) => matchesTreeMapNodeFilters(node, filters)),
-    TREE_MAP_WIDTH,
-    TREE_MAP_HEIGHT
+    width,
+    height
   );
 }
 
