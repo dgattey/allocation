@@ -78,10 +78,12 @@ describe("FloatingToolbar", () => {
     render(<FloatingToolbar {...props} />);
 
     fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
+    const searchCard = screen.getByText("Search");
     const accountCard = screen.getByText("Account");
     const typesCard = screen.getByText("Types");
     const fundsCard = screen.getByText("Funds");
 
+    expect(searchCard).toBeInTheDocument();
     expect(accountCard).toBeInTheDocument();
     expect(typesCard).toBeInTheDocument();
     expect(fundsCard).toBeInTheDocument();
@@ -97,6 +99,22 @@ describe("FloatingToolbar", () => {
     expect(props.onFiltersChange).toHaveBeenCalledWith({
       investmentTypes: [],
       accounts: ["Account B"],
+    });
+  });
+
+  it("updates the search filter from the filters card", () => {
+    const props = makeProps();
+    render(<FloatingToolbar {...props} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Filters/ }));
+    fireEvent.change(screen.getByRole("searchbox"), {
+      target: { value: "fund a" },
+    });
+
+    expect(props.onFiltersChange).toHaveBeenCalledWith({
+      investmentTypes: [],
+      accounts: [],
+      searchQuery: "fund a",
     });
   });
 
@@ -133,13 +151,14 @@ describe("FloatingToolbar", () => {
     props.filters = {
       investmentTypes: ["Stocks", "ETFs"],
       accounts: ["Account A"],
+      searchQuery: "market",
     };
     props.selectedFunds = ["FUND-A"];
 
     render(<FloatingToolbar {...props} />);
 
     expect(
-      screen.getByRole("button", { name: "Filters (4)" })
+      screen.getByRole("button", { name: "Filters (5)" })
     ).toBeInTheDocument();
   });
 
@@ -148,11 +167,14 @@ describe("FloatingToolbar", () => {
     props.filters = {
       investmentTypes: ["Stocks"],
       accounts: ["Account A"],
+      searchQuery: "market",
     };
     props.selectedFunds = ["FUND-A"];
 
     render(<FloatingToolbar {...props} />);
 
+    expect(screen.getByText("Search")).toBeInTheDocument();
+    expect(screen.getByText("market")).toBeInTheDocument();
     expect(screen.getByText("Account")).toBeInTheDocument();
     expect(screen.getByText("Account A")).toBeInTheDocument();
     expect(screen.getByText("Type")).toBeInTheDocument();
@@ -166,7 +188,7 @@ describe("FloatingToolbar", () => {
     render(<FloatingToolbar {...props} />);
 
     expect(
-      screen.getByText("All accounts, all funds, all types")
+      screen.getByText("All accounts, all funds, all types, all names")
     ).toBeInTheDocument();
   });
 

@@ -8,7 +8,10 @@ import type {
   TreeMapGrouping,
   ViewMode,
 } from "@/lib/types";
-import { hasActivePortfolioFilters } from "@/lib/portfolioFilters";
+import {
+  hasActivePortfolioFilters,
+  hasSearchQuery,
+} from "@/lib/portfolioFilters";
 import { cn } from "@/lib/utils";
 import { useTimeAgo } from "@/hooks/useTimeAgo";
 import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
@@ -61,9 +64,17 @@ export function FloatingToolbar({
   const activeFilterCount =
     filters.investmentTypes.length +
     filters.accounts.length +
+    (hasSearchQuery(filters) ? 1 : 0) +
     selectedFunds.length;
   const filterSummaryItems = buildFilterSummaryItems(filters, selectedFunds);
   const timeAgo = useTimeAgo(lastUpdated);
+
+  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+    onFiltersChange({
+      ...filters,
+      searchQuery: event.target.value,
+    });
+  }
 
   function handleAccountChange(event: ChangeEvent<HTMLSelectElement>) {
     const value = event.target.value;
@@ -75,6 +86,10 @@ export function FloatingToolbar({
 
   function clearInvestmentTypes() {
     onFiltersChange({ ...filters, investmentTypes: [] });
+  }
+
+  function clearSearch() {
+    onFiltersChange({ ...filters, searchQuery: "" });
   }
 
   function toggleInvestmentType(type: string) {
@@ -130,7 +145,7 @@ export function FloatingToolbar({
 
             <FilterSummaryStrip
               items={filterSummaryItems}
-              emptyLabel="All accounts, all funds, all types"
+              emptyLabel="All accounts, all funds, all types, all names"
             />
 
             <div className="grid gap-3">
@@ -226,7 +241,7 @@ export function FloatingToolbar({
             <div className="min-w-0 flex-1">
               <FilterSummaryStrip
                 items={filterSummaryItems}
-                emptyLabel="All accounts, all funds, all types"
+                emptyLabel="All accounts, all funds, all types, all names"
               />
             </div>
 
@@ -252,6 +267,8 @@ export function FloatingToolbar({
             filters={filters}
             fundOptions={fundOptions}
             selectedFunds={selectedFunds}
+            onSearchChange={handleSearchChange}
+            onClearSearch={clearSearch}
             onAccountChange={handleAccountChange}
             onClearInvestmentTypes={clearInvestmentTypes}
             onToggleInvestmentType={toggleInvestmentType}
