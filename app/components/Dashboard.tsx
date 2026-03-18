@@ -10,6 +10,7 @@ import type {
   ViewMode,
 } from "@/lib/types";
 import { formatDollar } from "@/lib/utils";
+import { logDebugEvent } from "@/lib/debugClient";
 import { SlidingNumber } from "./primitives/SlidingNumber";
 import { GainLoss } from "./primitives/GainLoss";
 import { TreeMap } from "./TreeMap";
@@ -83,19 +84,80 @@ export function Dashboard({
     : null;
 
   useEffect(() => {
+    // #region agent log
+    logDebugEvent({
+      hypothesisId: "C",
+      location: "app/components/Dashboard.tsx:mount",
+      message: "Dashboard mounted",
+      data: {
+        hasPortfolioData: true,
+        showClearConfirm: false,
+      },
+    });
+    // #endregion
+
     return () => {
+      // #region agent log
+      logDebugEvent({
+        hypothesisId: "C",
+        location: "app/components/Dashboard.tsx:unmount",
+        message: "Dashboard unmounted",
+        data: {
+          hadTimeout: clearConfirmTimeoutRef.current !== null,
+        },
+      });
+      // #endregion
+
       if (clearConfirmTimeoutRef.current) {
         clearTimeout(clearConfirmTimeoutRef.current);
       }
     };
   }, []);
 
+  useEffect(() => {
+    // #region agent log
+    logDebugEvent({
+      hypothesisId: "A",
+      location: "app/components/Dashboard.tsx:showClearConfirm",
+      message: "Clear confirmation state changed",
+      data: {
+        showClearConfirm,
+        timeoutActive: clearConfirmTimeoutRef.current !== null,
+      },
+    });
+    // #endregion
+  }, [showClearConfirm]);
+
   function handleClearDataClick() {
+    // #region agent log
+    logDebugEvent({
+      hypothesisId: "A",
+      location: "app/components/Dashboard.tsx:handleClearDataClick:entry",
+      message: "Clear button clicked",
+      data: {
+        showClearConfirm,
+        timeoutActive: clearConfirmTimeoutRef.current !== null,
+      },
+    });
+    // #endregion
+
     if (showClearConfirm) {
       if (clearConfirmTimeoutRef.current) {
         clearTimeout(clearConfirmTimeoutRef.current);
         clearConfirmTimeoutRef.current = null;
       }
+
+      // #region agent log
+      logDebugEvent({
+        hypothesisId: "B",
+        location: "app/components/Dashboard.tsx:handleClearDataClick:confirm",
+        message: "Confirm branch reached, calling onClearData",
+        data: {
+          showClearConfirm,
+        },
+      });
+      // #endregion
+
       onClearData();
       setShowClearConfirm(false);
       return;
@@ -106,6 +168,17 @@ export function Dashboard({
       clearTimeout(clearConfirmTimeoutRef.current);
     }
     clearConfirmTimeoutRef.current = setTimeout(() => {
+      // #region agent log
+      logDebugEvent({
+        hypothesisId: "A",
+        location: "app/components/Dashboard.tsx:handleClearDataClick:timeout",
+        message: "Clear confirmation timed out",
+        data: {
+          showClearConfirmAtTimeout: true,
+        },
+      });
+      // #endregion
+
       setShowClearConfirm(false);
       clearConfirmTimeoutRef.current = null;
     }, 3000);
