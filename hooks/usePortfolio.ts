@@ -45,6 +45,26 @@ const MOBILE_TREE_MAP_LAYOUT = {
 };
 const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)";
 
+function getFetchErrorMessage(
+  payload: { error?: unknown; details?: unknown },
+  status: number
+): string {
+  const error =
+    typeof payload.error === "string" && payload.error.trim().length > 0
+      ? payload.error.trim()
+      : `Server error: ${status}`;
+  const details =
+    typeof payload.details === "string" && payload.details.trim().length > 0
+      ? payload.details.trim()
+      : null;
+
+  if (!details || details === error) {
+    return error;
+  }
+
+  return `${error}: ${details}`;
+}
+
 export function usePortfolio() {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") {
@@ -115,7 +135,7 @@ export function usePortfolio() {
         });
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `Server error: ${res.status}`);
+          throw new Error(getFetchErrorMessage(errData, res.status));
         }
         const data: PortfolioData = await res.json();
         setPortfolioData(data);
