@@ -107,7 +107,7 @@ export function HeaderFundSelector({
                 : "text-text-primary hover:bg-surface-hover"
             )}
           >
-            <span>All funds</span>
+            <span className="min-w-0 flex-1">All funds</span>
             <MenuCheck checked={selectedFunds.length === 0} />
           </button>
 
@@ -123,7 +123,7 @@ export function HeaderFundSelector({
                   onClick={(event) => handleMenuToggle(event, fund.symbol)}
                   className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover transition-colors cursor-pointer"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-text-primary">
                       {fund.symbol}
                     </div>
@@ -165,7 +165,7 @@ function MenuCheck({
   return (
     <span
       className={cn(
-        "flex h-5 w-5 items-center justify-center rounded-md border text-[11px] font-bold transition-colors",
+        "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] leading-none font-bold transition-colors",
         checked
           ? "text-white border-transparent"
           : "text-transparent border-border bg-surface"
