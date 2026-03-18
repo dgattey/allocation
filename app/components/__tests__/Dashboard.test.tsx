@@ -168,6 +168,7 @@ describe("Dashboard clear action", () => {
   });
 
   it("renders a sticky search bar above the table and updates searchQuery", () => {
+    vi.useFakeTimers();
     const onFiltersChange = vi.fn();
 
     render(
@@ -201,7 +202,6 @@ describe("Dashboard clear action", () => {
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
     expect(searchShell).toHaveClass("sticky");
-    expect(searchShell).toHaveClass("sticky-header");
     expect(searchShell).toHaveClass("top-[7rem]");
     expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
       "0 holdings"
@@ -216,12 +216,15 @@ describe("Dashboard clear action", () => {
     fireEvent.change(screen.getByRole("searchbox", { name: "Search portfolio" }), {
       target: { value: "aapl" },
     });
+    expect(onFiltersChange).not.toHaveBeenCalled();
 
+    vi.advanceTimersByTime(250);
     expect(onFiltersChange).toHaveBeenCalledWith({
       investmentTypes: [],
       accounts: [],
       searchQuery: "aapl",
     });
+    vi.useRealTimers();
   });
 
   it("renders the bare sticky search field on mobile too", () => {
@@ -293,7 +296,6 @@ describe("Dashboard clear action", () => {
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
     expect(searchShell).toHaveClass("sticky");
-    expect(searchShell).toHaveClass("sticky-header");
     expect(searchShell).toHaveClass("top-[5.75rem]");
     expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
       "1 holding"

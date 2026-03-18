@@ -181,6 +181,12 @@ body {
   isolation: isolate;
 }
 
+.search-bar-docked {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: 0 1px 0 var(--glass-border), var(--shadow);
+}
+
 @supports (animation-timeline: scroll()) {
   .sticky-header {
     background-color: transparent;

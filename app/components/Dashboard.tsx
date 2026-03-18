@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import type {
   ActivePortfolioSummary,
@@ -22,6 +23,7 @@ import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
 import { FetchStatusBadge } from "./primitives/FetchStatusBadge";
 import { cn } from "@/lib/utils";
+import { useIsStickyDocked } from "@/hooks/useIsStickyDocked";
 
 interface DashboardProps {
   portfolioData: PortfolioData;
@@ -83,7 +85,20 @@ export function Dashboard({
   fetchError,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
-  const searchQuery = filters.searchQuery ?? "";
+  const searchQueryFromFilters = filters.searchQuery ?? "";
+  const [searchInput, setSearchInput] = useState(searchQueryFromFilters);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setSearchInput(searchQueryFromFilters);
+  }, [searchQueryFromFilters]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   const visibleHoldingCount =
     viewMode === "holdings"
       ? filteredRows.length
@@ -101,12 +116,28 @@ export function Dashboard({
   const isFiltered = activeSummary !== null;
   const headerLabel = isFiltered ? activeSummary.label : "Your portfolio";
 
-  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
-    onFiltersChange({
-      ...filters,
-      searchQuery: event.target.value,
-    });
-  }
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  const stickyTopPx = isMobile ? 92 : 112; // 5.75rem, 7rem
+  const [searchShellRef, isSearchDocked] = useIsStickyDocked<HTMLDivElement>(
+    stickyTopPx
+  );
+
+  const handleSearchChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      setSearchInput(value);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        onFiltersChange({ ...filtersRef.current, searchQuery: value });
+      }, 250);
+    },
+    [onFiltersChange]
+  );
 
   return (
     <div
@@ -307,11 +338,16 @@ export function Dashboard({
         style={{ "--enter-delay": "220ms" } as CSSProperties}
       >
         <div
+          ref={searchShellRef}
           data-testid="portfolio-search-shell"
           className={cn(
-            "sticky sticky-header z-30 mb-4 py-3",
+            "sticky z-30 mb-4 py-3",
             isMobile ? "-mx-4 px-4" : "-mx-6 px-6",
-            isMobile ? "top-[5.75rem]" : "top-[7rem]"
+            isMobile ? "top-[5.75rem]" : "top-[7rem]",
+            "transition-[background-color,backdrop-filter,box-shadow] duration-200",
+            isSearchDocked
+              ? "search-bar-docked"
+              : "bg-transparent"
           )}
         >
           <div className="flex items-center gap-3">
@@ -332,7 +368,7 @@ export function Dashboard({
               <input
                 type="text"
                 role="searchbox"
-                value={searchQuery}
+                value={searchInput}
                 onChange={handleSearchChange}
                 placeholder="Search by name or symbol"
                 aria-label="Search portfolio"
