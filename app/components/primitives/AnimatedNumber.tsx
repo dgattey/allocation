@@ -18,11 +18,11 @@ export function AnimatedNumber({
 }: AnimatedNumberProps) {
   const prevValue = useRef(value);
   const [flashClass, setFlashClass] = useState<string | null>(null);
+  const activeFlashClass = animate ? flashClass : null;
 
   useEffect(() => {
     if (!animate) {
       prevValue.current = value;
-      setFlashClass(null);
       return;
     }
 
@@ -40,8 +40,8 @@ export function AnimatedNumber({
     <span
       className={cn(
         "tabular-nums transition-colors duration-300",
-        flashClass === "positive" && "animate-[flash-positive_600ms_ease-out]",
-        flashClass === "negative" && "animate-[flash-negative_600ms_ease-out]",
+        activeFlashClass === "positive" && "animate-[flash-positive_600ms_ease-out]",
+        activeFlashClass === "negative" && "animate-[flash-negative_600ms_ease-out]",
         className
       )}
     >

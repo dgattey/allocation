@@ -66,7 +66,6 @@ function makePortfolioReturn(overrides: Partial<ReturnType<typeof usePortfolio>>
     treeMapWidth: 1200,
     treeMapHeight: 400,
     restoredFromStorage: false,
-    suppressStartupValueAnimations: false,
     ...overrides,
   };
 }
@@ -145,7 +144,6 @@ describe("Home page routing", () => {
         hasData: true,
         portfolioData: mockData,
         restoredFromStorage: true,
-        suppressStartupValueAnimations: true,
       })
     );
 

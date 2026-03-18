@@ -50,7 +50,7 @@ export default function Home() {
       treeMapWidth={portfolio.treeMapWidth}
       treeMapHeight={portfolio.treeMapHeight}
       enableIntroAnimation={!portfolio.restoredFromStorage}
-      enableValueAnimations={!portfolio.suppressStartupValueAnimations}
+      enableValueAnimations={!portfolio.restoredFromStorage}
     />
   );
 }

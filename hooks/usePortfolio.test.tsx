@@ -78,7 +78,6 @@ describe("usePortfolio startup cache restore", () => {
       expect(result.current.hasData).toBe(true);
       expect(result.current.portfolioData).toEqual(cachedData);
       expect(result.current.restoredFromStorage).toBe(true);
-      expect(result.current.suppressStartupValueAnimations).toBe(true);
     });
 
     expect(result.current.isLoading).toBe(true);
@@ -103,10 +102,6 @@ describe("usePortfolio startup cache restore", () => {
     await waitFor(() => {
       expect(result.current.portfolioData).toEqual(refreshedData);
       expect(result.current.isLoading).toBe(false);
-    });
-
-    await waitFor(() => {
-      expect(result.current.suppressStartupValueAnimations).toBe(false);
     });
   });
 });

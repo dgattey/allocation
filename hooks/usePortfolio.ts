@@ -58,8 +58,6 @@ export function usePortfolio() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restoredFromStorage, setRestoredFromStorage] = useState(false);
-  const [suppressStartupValueAnimations, setSuppressStartupValueAnimations] =
-    useState(false);
 
   // UI state
   const [filters, setFiltersState] = useState<FilterState>({
@@ -103,18 +101,6 @@ export function usePortfolio() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  useEffect(() => {
-    if (!suppressStartupValueAnimations || isLoading) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setSuppressStartupValueAnimations(false);
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [isLoading, suppressStartupValueAnimations]);
-
   const fetchData = useCallback(
     async (pos: FidelityPosition[], endpoint: string) => {
       try {
@@ -154,7 +140,6 @@ export function usePortfolio() {
       resetInitialScrollPosition();
       const cachedPortfolioData = loadPortfolioData();
       setRestoredFromStorage(true);
-      setSuppressStartupValueAnimations(true);
       setPositions(saved);
       if (cachedPortfolioData) {
         setPortfolioData(cachedPortfolioData);
@@ -287,7 +272,6 @@ export function usePortfolio() {
     setPortfolioData(null);
     setError(null);
     setRestoredFromStorage(false);
-    setSuppressStartupValueAnimations(false);
     setExpandedRows(new Set());
     setFiltersState({ investmentTypes: [], accounts: [] });
     setSelectedFundsState([]);
@@ -367,7 +351,6 @@ export function usePortfolio() {
     isLoading,
     error,
     restoredFromStorage,
-    suppressStartupValueAnimations,
     portfolioData,
     filteredRows,
     filteredTreeMapNodes,
