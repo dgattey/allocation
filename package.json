@@ -9,11 +9,11 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "d3-hierarchy": "^3.1.2",
-    "d3-scale": "^4.0.2",
     "next": "16.1.7",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -25,7 +25,6 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/d3-hierarchy": "^3.1.7",
-    "@types/d3-scale": "^4.0.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -34,11 +33,11 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jsdom": "^28.1.0",
+    "postcss": "^8.5.8",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "to-ico": "^1.1.5",
     "typescript": "^5",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.0"
   }
 }

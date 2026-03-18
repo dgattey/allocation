@@ -1,49 +1,69 @@
 "use client";
 
 import {
-  useState,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
-  useCallback,
+  useState,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 import type {
   ActivePortfolioSummary,
   FidelityPosition,
-  PortfolioData,
   FilterState,
+  FundOption,
+  PortfolioData,
   SortConfig,
   TableRow,
-  TreeMapNode,
   TreeMapGrouping,
+  TreeMapNode,
   ViewMode,
 } from "@/lib/types";
-import { parseCSV } from "@/lib/parseCSV";
-import { sortTableRows } from "@/lib/tableSort";
 import {
-  savePortfolio,
-  savePortfolioData,
+  DESKTOP_TREE_MAP_LAYOUT,
+  MOBILE_BREAKPOINT_QUERY,
+  MOBILE_TREE_MAP_LAYOUT,
+  POLL_INTERVAL_MS,
+} from "@/lib/portfolioLayout";
+import { parseCSV } from "@/lib/parseCSV";
+import {
+  sanitizeCurrentSelection,
+  sanitizeSelectionForFilterChange,
+  sanitizeSelectionForFundChange,
+} from "@/lib/portfolioSelection";
+import {
+  getActivePortfolioSummary,
+  getFilteredRows,
+  getFilteredTreeMapNodes,
+} from "@/lib/portfolioSelectors";
+import {
+  clearPortfolio,
   loadPortfolio,
   loadPortfolioData,
-  clearPortfolio,
+  savePortfolio,
+  savePortfolioData,
 } from "@/lib/storage";
 import {
   buildFlatHoldingTreeMapNodes,
-  filterFundTreeMapNodes,
+  filterAndRelayoutFundTreeMapNodes,
   getFundOptions,
-  relayoutTreeMapNodes,
 } from "@/lib/treemap";
 
-const POLL_INTERVAL = 5000;
-const DESKTOP_TREE_MAP_LAYOUT = {
-  width: 1200,
-  height: 400,
-};
-const MOBILE_TREE_MAP_LAYOUT = {
-  width: 720,
-  height: 640,
-};
-const MOBILE_BREAKPOINT_QUERY = "(max-width: 767px)";
+function createDefaultFilters(): FilterState {
+  return {
+    investmentTypes: [],
+    accounts: [],
+  };
+}
+
+function createDefaultSortConfig(): SortConfig {
+  return {
+    key: "totalValue",
+    direction: "desc",
+  };
+}
 
 function getFetchErrorMessage(
   payload: { error?: unknown; details?: unknown },
@@ -65,29 +85,55 @@ function getFetchErrorMessage(
   return `${error}: ${details}`;
 }
 
-export function usePortfolio() {
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
+function getInitialIsMobile(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
 
-    return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
-  });
+  return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
+}
+
+export interface UsePortfolioResult {
+  hasData: boolean;
+  isMobile: boolean;
+  isLoading: boolean;
+  error: string | null;
+  restoredFromStorage: boolean;
+  portfolioData: PortfolioData | null;
+  filteredRows: TableRow[];
+  filteredTreeMapNodes: TreeMapNode[];
+  filters: FilterState;
+  setFilters: (filters: FilterState) => void;
+  sortConfig: SortConfig;
+  handleSort: (key: string) => void;
+  expandedRows: Set<string>;
+  toggleExpand: (symbol: string) => void;
+  uploadFile: (file: File) => Promise<void>;
+  clearData: () => void;
+  viewMode: ViewMode;
+  setViewMode: Dispatch<SetStateAction<ViewMode>>;
+  treeMapGrouping: TreeMapGrouping;
+  setTreeMapGrouping: Dispatch<SetStateAction<TreeMapGrouping>>;
+  selectedFunds: string[];
+  toggleFundSelection: (symbol: string) => void;
+  clearSelectedFunds: () => void;
+  resetFilters: () => void;
+  fundOptions: FundOption[];
+  treeMapWidth: number;
+  treeMapHeight: number;
+  activeSummary: ActivePortfolioSummary | null;
+}
+
+export function usePortfolio(): UsePortfolioResult {
+  const [isMobile, setIsMobile] = useState(getInitialIsMobile);
   const [positions, setPositions] = useState<FidelityPosition[] | null>(null);
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restoredFromStorage, setRestoredFromStorage] = useState(false);
 
-  // UI state
-  const [filters, setFiltersState] = useState<FilterState>({
-    investmentTypes: [],
-    accounts: [],
-  });
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: "totalValue",
-    direction: "desc",
-  });
+  const [filters, setFiltersState] = useState<FilterState>(createDefaultFilters);
+  const [sortConfig, setSortConfig] = useState<SortConfig>(createDefaultSortConfig);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("holdings");
   const [treeMapGrouping, setTreeMapGrouping] =
@@ -106,13 +152,16 @@ export function usePortfolio() {
   positionsRef.current = positions;
   filtersRef.current = filters;
   selectedFundsRef.current = selectedFunds;
+
   const treeMapLayout = isMobile
     ? MOBILE_TREE_MAP_LAYOUT
     : DESKTOP_TREE_MAP_LAYOUT;
   const layoutMode = isMobile ? "mobile" : "desktop";
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") {
+      return;
+    }
 
     const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
     const handleChange = (event: MediaQueryListEvent) => {
@@ -121,6 +170,7 @@ export function usePortfolio() {
 
     setIsMobile(mediaQuery.matches);
     mediaQuery.addEventListener("change", handleChange);
+
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
@@ -140,6 +190,7 @@ export function usePortfolio() {
           const errData = await res.json().catch(() => ({}));
           throw new Error(getFetchErrorMessage(errData, res.status));
         }
+
         const data: PortfolioData = await res.json();
         setPortfolioData(data);
         savePortfolioData(data);
@@ -151,30 +202,37 @@ export function usePortfolio() {
         );
       }
     },
-    [treeMapLayout]
+    [treeMapLayout.height, treeMapLayout.width]
   );
 
   useLayoutEffect(() => {
-    if (mountedRef.current) return;
+    if (mountedRef.current) {
+      return;
+    }
+
     mountedRef.current = true;
 
     const saved = loadPortfolio();
-    if (saved) {
-      resetInitialScrollPosition();
-      const cachedPortfolioData = loadPortfolioData();
-      setRestoredFromStorage(true);
-      setPositions(saved);
-      if (cachedPortfolioData) {
-        setPortfolioData(cachedPortfolioData);
-      }
-      fetchData(saved, "/api/portfolio").finally(() => setIsLoading(false));
-    } else {
+    if (!saved) {
       setIsLoading(false);
+      return;
     }
+
+    resetInitialScrollPosition();
+    const cachedPortfolioData = loadPortfolioData();
+    setRestoredFromStorage(true);
+    setPositions(saved);
+    if (cachedPortfolioData) {
+      setPortfolioData(cachedPortfolioData);
+    }
+    fetchData(saved, "/api/portfolio").finally(() => setIsLoading(false));
   }, [fetchData]);
 
   useEffect(() => {
-    if (lastLayoutModeRef.current === layoutMode) return;
+    if (lastLayoutModeRef.current === layoutMode) {
+      return;
+    }
+
     lastLayoutModeRef.current = layoutMode;
 
     if (!positionsRef.current || !mountedRef.current) {
@@ -199,22 +257,24 @@ export function usePortfolio() {
       }
     }
 
-    pollRef.current = setInterval(poll, POLL_INTERVAL);
+    pollRef.current = setInterval(poll, POLL_INTERVAL_MS);
 
     function handleVisibility() {
       if (document.visibilityState === "visible" && positionsRef.current) {
         fetchData(positionsRef.current, "/api/portfolio/refresh");
       }
     }
+
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [positions, fetchData]);
+  }, [fetchData, positions]);
 
-  // Switch source rows based on viewMode
   const sourceRows =
     viewMode === "holdings"
       ? portfolioData?.tableRows
@@ -229,12 +289,16 @@ export function usePortfolio() {
   const fundOptions = getFundOptions(filteredFundTreeMapNodes);
 
   useEffect(() => {
-    if (!positions) return;
+    if (!positions) {
+      return;
+    }
 
     const sanitized = sanitizeCurrentSelection(positions, filters, selectedFunds);
+
     if (!areStringArraysEqual(selectedFunds, sanitized.selectedFunds)) {
       setSelectedFundsState(sanitized.selectedFunds);
     }
+
     if (
       !areStringArraysEqual(filters.accounts, sanitized.filters.accounts) ||
       !areStringArraysEqual(
@@ -244,7 +308,7 @@ export function usePortfolio() {
     ) {
       setFiltersState(sanitized.filters);
     }
-  }, [positions, filters, selectedFunds]);
+  }, [filters, positions, selectedFunds]);
 
   const filteredRows = getFilteredRows(
     sourceRows ?? null,
@@ -259,7 +323,12 @@ export function usePortfolio() {
   );
   const filteredTreeMapNodes =
     treeMapGrouping === "fund"
-      ? filterFundTreeMapNodes(filteredFundTreeMapNodes, selectedFunds)
+      ? filterAndRelayoutFundTreeMapNodes(
+          filteredFundTreeMapNodes,
+          selectedFunds,
+          treeMapLayout.width,
+          treeMapLayout.height
+        )
       : buildFlatHoldingTreeMapNodes({
           rows: portfolioData?.tableRows ?? [],
           filters,
@@ -273,6 +342,7 @@ export function usePortfolio() {
   async function uploadFile(file: File) {
     setIsLoading(true);
     setError(null);
+
     try {
       const text = await file.text();
       const parsed = parseCSV(text);
@@ -295,22 +365,16 @@ export function usePortfolio() {
     setError(null);
     setRestoredFromStorage(false);
     setExpandedRows(new Set());
-    setFiltersState({ investmentTypes: [], accounts: [] });
+    setFiltersState(createDefaultFilters());
     setSelectedFundsState([]);
     setTreeMapGrouping("fund");
-    setSortConfig({ key: "totalValue", direction: "desc" });
+    setSortConfig(createDefaultSortConfig());
     setViewMode("holdings");
-    setIsMobile(() => {
-      if (typeof window === "undefined") {
-        return false;
-      }
-
-      return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
-    });
-    lastLayoutModeRef.current = window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches
-      ? "mobile"
-      : "desktop";
+    const nextIsMobile = getInitialIsMobile();
+    setIsMobile(nextIsMobile);
+    lastLayoutModeRef.current = nextIsMobile ? "mobile" : "desktop";
     mountedRef.current = false;
+
     if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
@@ -366,7 +430,7 @@ export function usePortfolio() {
   }
 
   function resetFilters() {
-    setFiltersState({ investmentTypes: [], accounts: [] });
+    setFiltersState(createDefaultFilters());
     setSelectedFundsState([]);
   }
 
@@ -416,385 +480,6 @@ function resetInitialScrollPosition() {
   }, 0);
 }
 
-// Pure functions
-
-type FilterSelectionState = {
-  filters: FilterState;
-  selectedFunds: string[];
-};
-
-export function getFilteredRows(
-  rows: TableRow[] | null,
-  filters: FilterState,
-  sortConfig: SortConfig,
-  selectedFunds: string[]
-): TableRow[] {
-  if (!rows) return [];
-  const filtered = rows
-    .map((row) => buildVisibleRow(row, filters, selectedFunds))
-    .filter((row): row is TableRow => row !== null);
-  const visibleTotalValue = filtered.reduce((sum, row) => sum + row.totalValue, 0);
-
-  return sortTableRows(
-    filtered.map((row) => ({
-      ...row,
-      percentOfPortfolio:
-        visibleTotalValue > 0 ? (row.totalValue / visibleTotalValue) * 100 : 0,
-      sources: row.sources.map((source) => ({
-        ...source,
-        percentOfPortfolio:
-          visibleTotalValue > 0 ? (source.value / visibleTotalValue) * 100 : 0,
-      })),
-    })),
-    sortConfig
-  );
-}
-
-export function sanitizeSelectionForFilterChange(
-  positions: FidelityPosition[] | null,
-  previousFilters: FilterState,
-  nextFilters: FilterState,
-  selectedFunds: string[]
-): FilterSelectionState {
-  if (!positions) {
-    return { filters: nextFilters, selectedFunds };
-  }
-
-  const accountChanged = !areStringArraysEqual(
-    previousFilters.accounts,
-    nextFilters.accounts
-  );
-  const typeChanged = !areStringArraysEqual(
-    previousFilters.investmentTypes,
-    nextFilters.investmentTypes
-  );
-
-  const nextState: FilterSelectionState = {
-    filters: normalizeFilterState(nextFilters),
-    selectedFunds: [...selectedFunds],
-  };
-
-  if (accountChanged || typeChanged) {
-    nextState.selectedFunds = getValidSelectedFunds(
-      positions,
-      nextState.filters,
-      nextState.selectedFunds
-    );
-  }
-
-  return nextState;
-}
-
-export function sanitizeSelectionForFundChange(
-  positions: FidelityPosition[] | null,
-  filters: FilterState,
-  nextSelectedFunds: string[]
-): FilterSelectionState {
-  if (!positions) {
-    return {
-      filters: normalizeFilterState(filters),
-      selectedFunds: [...nextSelectedFunds],
-    };
-  }
-
-  const normalizedFilters = normalizeFilterState(filters);
-
-  return {
-    filters: normalizedFilters,
-    selectedFunds: getValidSelectedFunds(
-      positions,
-      normalizedFilters,
-      nextSelectedFunds
-    ),
-  };
-}
-
-function sanitizeCurrentSelection(
-  positions: FidelityPosition[] | null,
-  filters: FilterState,
-  selectedFunds: string[]
-): FilterSelectionState {
-  if (!positions) {
-    return {
-      filters: normalizeFilterState(filters),
-      selectedFunds: [...selectedFunds],
-    };
-  }
-
-  const normalizedFilters = normalizeFilterState(filters);
-  const nextFilters: FilterState = {
-    accounts: filterExistingAccounts(positions, normalizedFilters.accounts),
-    investmentTypes: filterExistingInvestmentTypes(
-      positions,
-      normalizedFilters.investmentTypes
-    ),
-  };
-  const nextSelectedFunds = getValidSelectedFunds(
-    positions,
-    nextFilters,
-    selectedFunds
-  );
-
-  return {
-    filters: nextFilters,
-    selectedFunds: nextSelectedFunds,
-  };
-}
-
-function getActivePortfolioSummary(
-  positions: FidelityPosition[] | null,
-  filters: FilterState,
-  selectedFunds: string[]
-): ActivePortfolioSummary | null {
-  const hasActiveFilters =
-    filters.investmentTypes.length > 0 ||
-    filters.accounts.length > 0 ||
-    selectedFunds.length > 0;
-
-  if (!positions || !hasActiveFilters) return null;
-
-  const matchedPositions = positions.filter(
-    (position) =>
-      matchesPositionFilters(position, filters) &&
-      matchesFundSelection(position, selectedFunds)
-  );
-  if (matchedPositions.length === 0) return null;
-
-  const value = matchedPositions.reduce(
-    (sum, position) => sum + position.currentValue,
-    0
-  );
-  const gainLoss = matchedPositions.reduce(
-    (sum, position) => sum + position.totalGainLossDollar,
-    0
-  );
-  const costBasis = matchedPositions.reduce(
-    (sum, position) => sum + position.costBasisTotal,
-    0
-  );
-
-  return {
-    value,
-    gainLoss,
-    gainLossPercent: costBasis > 0 ? (gainLoss / costBasis) * 100 : 0,
-    label: getActiveSummaryLabel(matchedPositions, filters, selectedFunds),
-  };
-}
-
-function getActiveSummaryLabel(
-  matchedPositions: FidelityPosition[],
-  filters: FilterState,
-  selectedFunds: string[]
-): string {
-  const hasAccountFilter = filters.accounts.length > 0;
-  const hasTypeFilter = filters.investmentTypes.length > 0;
-  const hasFundFilter = selectedFunds.length > 0;
-
-  if (!hasAccountFilter && !hasTypeFilter && hasFundFilter) {
-    if (selectedFunds.length === 1) {
-      return matchedPositions.find(
-        (position) => position.symbol === selectedFunds[0]
-      )?.description ?? selectedFunds[0];
-    }
-
-    return `${selectedFunds.length} funds selected`;
-  }
-
-  if (hasAccountFilter && !hasTypeFilter && !hasFundFilter) {
-    return filters.accounts[0];
-  }
-
-  if (!hasAccountFilter && hasTypeFilter && !hasFundFilter) {
-    return filters.investmentTypes.length === 1
-      ? filters.investmentTypes[0]
-      : `${filters.investmentTypes.length} types selected`;
-  }
-
-  return "Filtered portfolio";
-}
-
-function matchesPositionFilters(
-  position: FidelityPosition,
-  filters: FilterState
-): boolean {
-  const matchType =
-    filters.investmentTypes.length === 0 ||
-    filters.investmentTypes.includes(position.investmentType);
-  const matchAccount =
-    filters.accounts.length === 0 ||
-    filters.accounts.includes(position.accountName);
-
-  return matchType && matchAccount;
-}
-
-function matchesFundSelection(
-  position: FidelityPosition,
-  selectedFunds: string[]
-): boolean {
-  return (
-    selectedFunds.length === 0 || selectedFunds.includes(position.symbol)
-  );
-}
-
-function getValidSelectedFunds(
-  positions: FidelityPosition[],
-  filters: FilterState,
-  selectedFunds: string[]
-): string[] {
-  return selectedFunds.filter((symbol) =>
-    positions.some(
-      (position) =>
-        position.symbol === symbol && matchesPositionFilters(position, filters)
-    )
-  );
-}
-
-function filterExistingAccounts(
-  positions: FidelityPosition[],
-  accounts: string[]
-): string[] {
-  if (accounts.length === 0) return accounts;
-
-  const validAccounts = new Set(positions.map((position) => position.accountName));
-  return accounts.filter((account) =>
-    validAccounts.has(account)
-  );
-}
-
-function filterExistingInvestmentTypes(
-  positions: FidelityPosition[],
-  investmentTypes: string[]
-): string[] {
-  if (investmentTypes.length === 0) return investmentTypes;
-
-  const validInvestmentTypes = new Set<string>(
-    positions.map((position) => position.investmentType)
-  );
-  return investmentTypes.filter((investmentType) =>
-    validInvestmentTypes.has(investmentType)
-  );
-}
-
-function normalizeFilterState(filters: FilterState): FilterState {
-  return {
-    accounts: [...filters.accounts],
-    investmentTypes: [...filters.investmentTypes],
-  };
-}
-
 function areStringArraysEqual(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((value, index) => value === b[index]);
-}
-
-export function getFilteredTreeMapNodes(
-  portfolioData: PortfolioData | null,
-  filters: FilterState,
-  width = DESKTOP_TREE_MAP_LAYOUT.width,
-  height = DESKTOP_TREE_MAP_LAYOUT.height
-): TreeMapNode[] {
-  if (!portfolioData) return [];
-  if (filters.investmentTypes.length === 0 && filters.accounts.length === 0) {
-    return portfolioData.treeMapNodes;
-  }
-
-  return relayoutTreeMapNodes(
-    portfolioData.treeMapNodes.filter((node) => matchesTreeMapNodeFilters(node, filters)),
-    width,
-    height
-  );
-}
-
-function buildVisibleRow(
-  row: TableRow,
-  filters: FilterState,
-  selectedFunds: string[]
-): TableRow | null {
-  const visibleSources = row.sources.filter(
-    (source) =>
-      matchesSourceFilters(source.account, source.investmentType, filters) &&
-      matchesRowSourceFundSelection(
-        row.symbol,
-        source.type,
-        source.sourceSymbol,
-        selectedFunds
-      )
-  );
-
-  if (visibleSources.length === 0) {
-    return null;
-  }
-
-  const totalValue = visibleSources.reduce((sum, source) => sum + source.value, 0);
-  const totalGainLossDollar = visibleSources.reduce(
-    (sum, source) => sum + (source.totalGainLossDollar ?? 0),
-    0
-  );
-  const totalCostBasis = visibleSources.reduce(
-    (sum, source) => sum + (source.costBasisTotal ?? 0),
-    0
-  );
-
-  return {
-    ...row,
-    accounts: [...new Set(visibleSources.map((source) => source.account))],
-    investmentTypes: [
-      ...new Set(visibleSources.map((source) => source.investmentType)),
-    ],
-    totalValue,
-    percentOfPortfolio: 0,
-    totalGainLossDollar,
-    totalGainLossPercent:
-      totalCostBasis > 0 ? (totalGainLossDollar / totalCostBasis) * 100 : 0,
-    isExpandable: visibleSources.length > 1,
-    sources: visibleSources.map((source) => ({
-      ...source,
-    })),
-  };
-}
-
-function matchesSourceFilters(
-  account: string,
-  investmentType: string,
-  filters: FilterState
-): boolean {
-  const matchesAccount =
-    filters.accounts.length === 0 || filters.accounts.includes(account);
-  const matchesType =
-    filters.investmentTypes.length === 0 ||
-    filters.investmentTypes.includes(investmentType);
-
-  return matchesAccount && matchesType;
-}
-
-function matchesRowSourceFundSelection(
-  rowSymbol: string,
-  sourceType: "direct" | "fund",
-  sourceSymbol: string,
-  selectedFunds: string[]
-): boolean {
-  if (selectedFunds.length === 0) {
-    return true;
-  }
-
-  if (selectedFunds.includes(sourceSymbol)) {
-    return true;
-  }
-
-  return sourceType === "direct" && selectedFunds.includes(rowSymbol);
-}
-
-function matchesTreeMapNodeFilters(
-  node: TreeMapNode,
-  filters: FilterState
-): boolean {
-  const matchesAccount =
-    filters.accounts.length === 0 ||
-    (node.account ? filters.accounts.includes(node.account) : false);
-  const matchesType =
-    filters.investmentTypes.length === 0 ||
-    (node.investmentType
-      ? filters.investmentTypes.includes(node.investmentType)
-      : false);
-
-  return matchesAccount && matchesType;
 }

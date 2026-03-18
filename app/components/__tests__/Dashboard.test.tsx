@@ -159,7 +159,10 @@ describe("Dashboard clear action", () => {
     );
 
     expect(screen.getByText("2 funds selected")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+    const resetButton = screen.getByRole("button", { name: "Reset filters" });
+    expect(resetButton).toHaveAttribute("title", "Reset all filters");
+    expect(screen.queryByText("Reset filters")).not.toBeInTheDocument();
+    fireEvent.click(resetButton);
     expect(onResetFilters).toHaveBeenCalledTimes(1);
   });
 

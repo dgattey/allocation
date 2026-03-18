@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface AnimatedNumberProps {
@@ -10,48 +10,55 @@ interface AnimatedNumberProps {
   animate?: boolean;
 }
 
+const POSITIVE_FLASH_CLASS = "animate-[flash-positive_600ms_ease-out]";
+const NEGATIVE_FLASH_CLASS = "animate-[flash-negative_600ms_ease-out]";
+
 export function AnimatedNumber({
   value,
   format,
   className,
   animate = true,
 }: AnimatedNumberProps) {
+  const spanRef = useRef<HTMLSpanElement>(null);
   const prevValue = useRef(value);
-  const [flashClass, setFlashClass] = useState<string | null>(null);
-  const activeFlashClass = animate ? flashClass : null;
 
   useEffect(() => {
+    const element = spanRef.current;
+
     if (!animate) {
+      prevValue.current = value;
+      element?.classList.remove(POSITIVE_FLASH_CLASS, NEGATIVE_FLASH_CLASS);
+      return;
+    }
+
+    if (prevValue.current === value) {
+      return;
+    }
+
+    if (!element) {
       prevValue.current = value;
       return;
     }
 
-    if (prevValue.current !== value) {
-      const direction = value > prevValue.current ? "positive" : "negative";
-      prevValue.current = value;
-      let clearTimer: number | undefined;
-      const startTimer = window.setTimeout(() => {
-        setFlashClass(direction);
-        clearTimer = window.setTimeout(() => setFlashClass(null), 600);
-      }, 0);
+    const flashClass =
+      value > prevValue.current ? POSITIVE_FLASH_CLASS : NEGATIVE_FLASH_CLASS;
 
-      return () => {
-        window.clearTimeout(startTimer);
-        if (clearTimer !== undefined) {
-          window.clearTimeout(clearTimer);
-        }
-      };
-    }
+    prevValue.current = value;
+    element.classList.remove(POSITIVE_FLASH_CLASS, NEGATIVE_FLASH_CLASS);
+    void element.offsetWidth;
+    element.classList.add(flashClass);
+
+    const timer = window.setTimeout(() => {
+      element.classList.remove(flashClass);
+    }, 600);
+
+    return () => window.clearTimeout(timer);
   }, [animate, value]);
 
   return (
     <span
-      className={cn(
-        "tabular-nums transition-colors duration-300",
-        activeFlashClass === "positive" && "animate-[flash-positive_600ms_ease-out]",
-        activeFlashClass === "negative" && "animate-[flash-negative_600ms_ease-out]",
-        className
-      )}
+      ref={spanRef}
+      className={cn("tabular-nums transition-colors duration-300", className)}
     >
       {format(value)}
     </span>

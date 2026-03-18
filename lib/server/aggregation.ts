@@ -14,7 +14,8 @@ import type {
   PositionSource,
   PortfolioSummary,
 } from "../types";
-import { assignColors, getChildColor } from "../colors";
+import { DEFAULT_TREEMAP_COLOR, getColorForSymbol } from "../colors";
+import { isFundInvestmentType } from "../investmentTypes";
 
 // === Intermediate types for treemap hierarchy ===
 
@@ -108,16 +109,10 @@ function buildTreeMap(
   height: number
 ): TreeMapNode[] {
   const funds = positions.filter(
-    (p) =>
-      p.investmentType === "ETFs" ||
-      p.investmentType === "Mutual Funds" ||
-      p.investmentType === "Others"
+    (position) => isFundInvestmentType(position.investmentType)
   );
   const stocks = positions.filter((p) => p.investmentType === "Stocks");
   const cash = positions.filter((p) => p.investmentType === "Cash");
-
-  const fundSymbols = funds.map((f) => f.symbol);
-  const colorMap = assignColors(fundSymbols);
 
   const children: HierarchyData[] = [];
 
@@ -125,20 +120,17 @@ function buildTreeMap(
   for (const fund of funds) {
     const fundHoldings = holdings[fund.symbol] || [];
     const quote = quotes[fund.symbol];
-    const fundColor = colorMap[fund.symbol] || {
-      base: "#64748b",
-      light: "#94a3b8",
-    };
+    const fundColor = getColorForSymbol(fund.symbol);
 
     if (fundHoldings.length > 0) {
-      const fundChildren: HierarchyData[] = fundHoldings.map((h, idx) => {
+      const fundChildren: HierarchyData[] = fundHoldings.map((h) => {
         const holdingQuote = quotes[h.symbol];
         const holdingValue = fund.currentValue * h.holdingPercent;
         return {
           name: h.holdingName,
           symbol: h.symbol,
           value: holdingValue,
-          color: getChildColor(fundColor.base, idx),
+          color: getColorForSymbol(h.symbol),
           meta: {
             parentSymbol: fund.symbol,
             parentName: fund.description,
@@ -159,7 +151,7 @@ function buildTreeMap(
       children.push({
         name: fund.description,
         symbol: fund.symbol,
-        color: fundColor.base,
+        color: fundColor,
         children: fundChildren,
         meta: {
           percentOfPortfolio:
@@ -179,7 +171,7 @@ function buildTreeMap(
         name: fund.description,
         symbol: fund.symbol,
         value: fund.currentValue,
-        color: fundColor.base,
+        color: fundColor,
         meta: {
           percentOfPortfolio:
             totalValue > 0 ? (fund.currentValue / totalValue) * 100 : 0,
@@ -195,25 +187,14 @@ function buildTreeMap(
     }
   }
 
-  // Add individual stocks with color offset
-  const stockColorOffset = funds.length;
-  const stockSymbols = stocks.map((s) => s.symbol);
-  const stockColors = assignColors([
-    ...Array(stockColorOffset).fill("_pad"),
-    ...stockSymbols,
-  ]);
-
   for (const stock of stocks) {
     const quote = quotes[stock.symbol];
-    const stockColor = stockColors[stock.symbol] || {
-      base: "#64748b",
-      light: "#94a3b8",
-    };
+    const stockColor = getColorForSymbol(stock.symbol);
     children.push({
       name: stock.description,
       symbol: stock.symbol,
       value: stock.currentValue,
-      color: stockColor.base,
+      color: stockColor,
       meta: {
         percentOfPortfolio:
           totalValue > 0 ? (stock.currentValue / totalValue) * 100 : 0,
@@ -235,7 +216,7 @@ function buildTreeMap(
         name: c.description || "Cash",
         symbol: c.symbol,
         value: c.currentValue,
-        color: "#94a3b8",
+        color: getColorForSymbol(c.symbol) ?? DEFAULT_TREEMAP_COLOR,
         meta: {
           percentOfPortfolio:
             totalValue > 0 ? (c.currentValue / totalValue) * 100 : 0,

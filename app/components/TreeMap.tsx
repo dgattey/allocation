@@ -8,7 +8,8 @@ import {
   type MouseEvent,
 } from "react";
 import type { TreeMapGrouping, TreeMapNode } from "@/lib/types";
-import { isFundInvestmentType } from "@/lib/treemap";
+import { isFundInvestmentType } from "@/lib/investmentTypes";
+import { filterFundTreeMapNodes } from "@/lib/treemap";
 import { cn, formatCompact } from "@/lib/utils";
 import {
   isFidelityLinkable,
@@ -73,18 +74,9 @@ export function TreeMap({
 
   const selectedNodes =
     grouping === "fund" && hasSelectedFunds
-      ? nodes.filter((node) => {
-          if (node.depth === 1) {
-            return selectedFunds.includes(node.symbol);
-          }
-
-          if (node.depth === 2 && node.parentSymbol) {
-            return selectedFunds.includes(node.parentSymbol);
-          }
-
-          return false;
-        })
+      ? filterFundTreeMapNodes(nodes, selectedFunds)
       : [];
+  const visibleNodeIds = new Set(selectedNodes.map((node) => node.id));
 
   if (selectedNodes.length > 0) {
     const x0 = Math.min(...selectedNodes.map((node) => node.x0)) * scaleX;
@@ -159,12 +151,7 @@ export function TreeMap({
   }
 
   function isNodeVisible(node: TreeMapNode): boolean {
-    if (grouping !== "fund" || !hasSelectedFunds) return true;
-    if (node.depth === 1 && selectedFunds.includes(node.symbol)) return true;
-    if (node.depth === 2 && node.parentSymbol) {
-      return selectedFunds.includes(node.parentSymbol);
-    }
-    return false;
+    return grouping !== "fund" || !hasSelectedFunds || visibleNodeIds.has(node.id);
   }
 
   function isSelectableFund(node: TreeMapNode): boolean {

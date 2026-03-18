@@ -1,8 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FidelityPosition, PortfolioData } from "@/lib/types";
-import { usePortfolio } from "./usePortfolio";
 import { savePortfolio, savePortfolioData } from "@/lib/storage";
+import { usePortfolio } from "../usePortfolio";
 
 const positions: FidelityPosition[] = [
   {

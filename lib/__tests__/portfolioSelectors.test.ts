@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getFilteredRows, getFilteredTreeMapNodes } from "./usePortfolio";
+import {
+  getFilteredRows,
+  getFilteredTreeMapNodes,
+} from "@/lib/portfolioSelectors";
 import type { PortfolioData, TableRow, TreeMapNode } from "@/lib/types";
 
 const SORT_CONFIG = { key: "totalValue", direction: "desc" } as const;
@@ -42,7 +45,7 @@ function makeTreeMapNode(overrides: Partial<TreeMapNode>): TreeMapNode {
   };
 }
 
-describe("usePortfolio filtering helpers", () => {
+describe("portfolio selectors", () => {
   it("recalculates row totals from matching account sources", () => {
     const rows: TableRow[] = [
       makeRow({

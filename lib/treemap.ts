@@ -1,8 +1,11 @@
 import { hierarchy, treemap, treemapSquarify } from "d3-hierarchy";
-import { assignColors } from "./colors";
+import { getColorForSymbol } from "./colors";
+import { isFundInvestmentType } from "./investmentTypes";
+import {
+  matchesRowSourceFundSelection,
+  matchesSourceFilters,
+} from "./portfolioFilters";
 import type { FilterState, FundOption, TableRow, TreeMapNode } from "./types";
-
-const FUND_TYPES = new Set(["ETFs", "Mutual Funds", "Others"]);
 
 interface FlatNodeData {
   symbol: string;
@@ -26,10 +29,6 @@ interface FlatHierarchyData extends Partial<FlatNodeData> {
 interface RelayoutHierarchyData {
   node: TreeMapNode;
   children?: RelayoutHierarchyData[];
-}
-
-export function isFundInvestmentType(type?: string): boolean {
-  return !!type && FUND_TYPES.has(type);
 }
 
 export function getFundOptions(nodes: TreeMapNode[]): FundOption[] {
@@ -83,20 +82,36 @@ export function filterFundTreeMapNodes(
   });
 }
 
+export function filterAndRelayoutFundTreeMapNodes(
+  nodes: TreeMapNode[],
+  selectedFunds: string[],
+  width: number,
+  height: number
+): TreeMapNode[] {
+  const filteredNodes = filterFundTreeMapNodes(nodes, selectedFunds);
+
+  if (selectedFunds.length === 0 || filteredNodes.length === 0) {
+    return filteredNodes;
+  }
+
+  return relayoutTreeMapNodes(filteredNodes, width, height);
+}
+
 export function relayoutTreeMapNodes(
   nodes: TreeMapNode[],
   width: number,
   height: number
 ): TreeMapNode[] {
-  if (nodes.length === 0) {
+  const visibleNodes = nodes.filter((node) => node.value > 0);
+  if (visibleNodes.length === 0) {
     return [];
   }
 
-  const parentNodes = nodes.filter((node) => node.depth === 1);
+  const parentNodes = visibleNodes.filter((node) => node.depth === 1);
   const totalValue = parentNodes.reduce((sum, node) => sum + node.value, 0);
   const childGroups = new Map<string, TreeMapNode[]>();
 
-  for (const node of nodes) {
+  for (const node of visibleNodes) {
     if (node.depth !== 2 || !node.parentSymbol) {
       continue;
     }
@@ -201,7 +216,16 @@ export function buildFlatHoldingTreeMapNodes({
         continue;
       }
 
-      if (!matchesFundSelection(row.symbol, source.type, source.sourceSymbol, selectedFunds)) {
+      if (
+        !matchesRowSourceFundSelection(
+          {
+            rowSymbol: row.symbol,
+            sourceType: source.type,
+            sourceSymbol: source.sourceSymbol,
+          },
+          selectedFunds
+        )
+      ) {
         continue;
       }
 
@@ -243,13 +267,9 @@ export function buildFlatHoldingTreeMapNodes({
     return [];
   }
 
-  const colorMap = assignColors(
-    visibleRows.map((row) => row.symbol).sort((a, b) => a.localeCompare(b))
-  );
-
   const children: FlatHierarchyData[] = visibleRows.map((row) => ({
     ...row,
-    color: colorMap[row.symbol]?.base ?? "#64748b",
+    color: getColorForSymbol(row.symbol),
   }));
 
   const root = hierarchy<FlatHierarchyData>({
@@ -289,37 +309,6 @@ export function buildFlatHoldingTreeMapNodes({
     investmentType: node.data.investmentType,
     account: node.data.account,
   }));
-}
-
-function matchesSourceFilters(
-  account: string,
-  investmentType: string,
-  filters: FilterState
-): boolean {
-  const matchesAccount =
-    filters.accounts.length === 0 || filters.accounts.includes(account);
-  const matchesType =
-    filters.investmentTypes.length === 0 ||
-    filters.investmentTypes.includes(investmentType);
-
-  return matchesAccount && matchesType;
-}
-
-function matchesFundSelection(
-  rowSymbol: string,
-  sourceType: "direct" | "fund",
-  sourceSymbol: string,
-  selectedFunds: string[]
-): boolean {
-  if (selectedFunds.length === 0) {
-    return true;
-  }
-
-  if (selectedFunds.includes(sourceSymbol)) {
-    return true;
-  }
-
-  return sourceType === "direct" && selectedFunds.includes(rowSymbol);
 }
 
 function getTreeMapGroupKey(symbol: string, account?: string): string {

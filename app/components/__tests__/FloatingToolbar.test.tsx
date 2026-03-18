@@ -1,8 +1,9 @@
+import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { FloatingToolbar } from "../FloatingToolbar";
 
-function makeProps() {
+function makeProps(): ComponentProps<typeof FloatingToolbar> {
   return {
     summary: {
       totalValue: 20000,
@@ -40,6 +41,7 @@ function makeProps() {
     selectedFunds: [] as string[],
     onToggleFund: vi.fn(),
     onClearFunds: vi.fn(),
+    onResetFilters: vi.fn(),
   };
 }
 
@@ -62,13 +64,13 @@ describe("FloatingToolbar", () => {
 
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+    const resetButton = screen.getByRole("button", { name: "Reset filters" });
+    expect(resetButton).toHaveAttribute("title", "Reset all filters");
+    expect(screen.queryByText("Reset filters")).not.toBeInTheDocument();
 
-    expect(props.onFiltersChange).toHaveBeenCalledWith({
-      investmentTypes: [],
-      accounts: [],
-    });
-    expect(props.onClearFunds).toHaveBeenCalledTimes(1);
+    fireEvent.click(resetButton);
+
+    expect(props.onResetFilters).toHaveBeenCalledTimes(1);
   });
 
   it("opens separate filter cards and updates the account filter", () => {
