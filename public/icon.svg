@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Treemap allocator: 4 blocks, squarified layout. Colors from lib/server/colors.ts (warm-sand, sage, muted-teal, dusty-rose) -->
-  <rect width="32" height="32" fill="#fafafa"/>
-  <rect x="1" y="1" width="16" height="16" rx="2" fill="#C49A5C"/>
-  <rect x="17" y="1" width="14" height="16" rx="2" fill="#5E9E74"/>
-  <rect x="1" y="17" width="16" height="14" rx="2" fill="#4E9999"/>
-  <rect x="17" y="17" width="14" height="14" rx="2" fill="#B86B6B"/>
+  <!-- Treemap allocator: asymmetric squarified layout, no bg, floats centered -->
+  <rect x="4" y="4" width="11" height="24" rx="2" fill="#C49A5C"/>
+  <rect x="15" y="4" width="13" height="10" rx="2" fill="#5E9E74"/>
+  <rect x="15" y="14" width="6" height="14" rx="2" fill="#4E9999"/>
+  <rect x="21" y="14" width="7" height="14" rx="2" fill="#B86B6B"/>
 </svg>
