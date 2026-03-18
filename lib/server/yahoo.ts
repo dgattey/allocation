@@ -215,8 +215,7 @@ async function fetchHoldingsForSymbol(
     return cached!.data;
   }
 
-  let lookupSymbol = toYahooSymbol(symbol);
-  const lookupCandidates = [lookupSymbol];
+  const lookupCandidates = [toYahooSymbol(symbol)];
   if (isNonStandardSymbol(symbol)) {
     if (!description) return [];
     const resolvedSymbols = await resolveHoldingsLookupSymbols(description);
