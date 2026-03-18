@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type CSSProperties,
   useEffect,
   useRef,
   useState,
@@ -47,7 +48,8 @@ export function HeaderFundSelector({
   return (
     <div
       ref={containerRef}
-      className="relative mt-5 max-w-[780px] rounded-2xl border border-border/70 bg-surface/86 backdrop-blur-xl shadow-[var(--shadow-md)] px-4 py-3"
+      className="relative mt-5 max-w-[780px] rounded-2xl border border-border/70 bg-surface/86 backdrop-blur-xl shadow-[var(--shadow-md)] px-4 py-3 animate-soft-rise"
+      style={{ "--enter-delay": "80ms" } as CSSProperties}
     >
       <div className="flex flex-wrap items-center gap-2">
         <HeaderLabel>Funds</HeaderLabel>
@@ -55,7 +57,7 @@ export function HeaderFundSelector({
         <button
           onClick={onClearFunds}
           className={cn(
-            "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border cursor-pointer whitespace-nowrap",
+            "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border cursor-pointer whitespace-nowrap hover-lift press-down",
             selectedFunds.length === 0
               ? "bg-surface-hover text-text-primary border-border shadow-sm"
               : "bg-surface text-text-muted border-border hover:text-text-primary hover:bg-surface-hover"
@@ -69,11 +71,12 @@ export function HeaderFundSelector({
             key={fund.symbol}
             onClick={() => onToggleFund(fund.symbol)}
             aria-label={`Remove ${fund.symbol}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white border border-white/0 shadow-sm cursor-pointer transition-all duration-200 hover:brightness-110 active:scale-95 whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white border border-white/0 shadow-sm cursor-pointer transition-all duration-200 hover:brightness-110 hover-lift press-down whitespace-nowrap animate-soft-pop"
             style={{
+              "--enter-delay": `${80 + selectedOptions.indexOf(fund) * 35}ms`,
               backgroundColor: fund.color,
               borderColor: `${fund.color}66`,
-            }}
+            } as CSSProperties}
           >
             {fund.symbol}
             <span className="text-[10px] opacity-70">x</span>
@@ -83,7 +86,7 @@ export function HeaderFundSelector({
         <button
           onClick={() => setShowMenu((open) => !open)}
           className={cn(
-            "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
+            "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap hover-lift press-down",
             showMenu
               ? "bg-surface-hover text-text-primary border-border shadow-sm"
               : "bg-surface text-text-muted border-border hover:text-text-primary hover:bg-surface-hover"
@@ -94,14 +97,14 @@ export function HeaderFundSelector({
       </div>
 
       {showMenu && (
-        <div className="absolute left-0 top-full mt-2 w-[320px] max-w-[calc(100vw-3rem)] rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-lg)] p-2 z-20 animate-fade-in">
+        <div className="absolute left-0 top-full mt-2 w-[320px] max-w-[calc(100vw-3rem)] rounded-2xl border border-border/70 bg-surface shadow-[var(--shadow-lg)] p-2 z-20 animate-soft-pop origin-top-left">
           <button
             onClick={(event) => {
               event.preventDefault();
               onClearFunds();
             }}
             className={cn(
-              "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors cursor-pointer",
+              "flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors cursor-pointer hover-lift press-down",
               selectedFunds.length === 0
                 ? "bg-surface-hover text-text-primary"
                 : "text-text-primary hover:bg-surface-hover"
@@ -121,7 +124,7 @@ export function HeaderFundSelector({
                 <button
                   key={fund.symbol}
                   onClick={(event) => handleMenuToggle(event, fund.symbol)}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover transition-colors cursor-pointer"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left hover:bg-surface-hover transition-colors cursor-pointer hover-lift press-down"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-text-primary">
