@@ -4,6 +4,12 @@ import type { FidelityPosition, PortfolioData } from "@/lib/types";
 import { savePortfolio, savePortfolioData } from "@/lib/storage";
 import { usePortfolio } from "../usePortfolio";
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/",
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
 const positions: FidelityPosition[] = [
   {
     accountNumber: "TEST-0001",
