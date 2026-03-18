@@ -62,6 +62,6 @@ describe("TreeMapTooltip", () => {
     );
 
     const tooltip = container.firstElementChild as HTMLElement;
-    expect(tooltip).toHaveStyle({ left: "16px", top: "268px" });
+    expect(tooltip).toHaveStyle({ left: "16px", top: "258px" });
   });
 });

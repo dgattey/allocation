@@ -73,19 +73,13 @@ export function usePortfolio() {
     if (typeof window === "undefined") return;
 
     const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
-    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+    const handleChange = (event: MediaQueryListEvent) => {
       setIsMobile(event.matches);
     };
 
-    handleChange(mediaQuery);
-
-    if ("addEventListener" in mediaQuery) {
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   const fetchData = useCallback(
