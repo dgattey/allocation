@@ -62,6 +62,7 @@ export function Dashboard({
   focusedSummary,
 }: DashboardProps) {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const clearButtonRef = useRef<HTMLButtonElement | null>(null);
   const clearConfirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -126,6 +127,62 @@ export function Dashboard({
       },
     });
     // #endregion
+
+    if (showClearConfirm && clearButtonRef.current) {
+      const rect = clearButtonRef.current.getBoundingClientRect();
+
+      // #region agent log
+      logDebugEvent({
+        hypothesisId: "D",
+        location: "app/components/Dashboard.tsx:confirmState",
+        message: "Confirm button bounds after render",
+        data: {
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          top: Math.round(rect.top),
+          bottom: Math.round(rect.bottom),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        },
+      });
+      // #endregion
+    }
+
+    if (!showClearConfirm) {
+      return;
+    }
+
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const button = clearButtonRef.current;
+      const rect = button?.getBoundingClientRect();
+
+      // #region agent log
+      logDebugEvent({
+        hypothesisId: "D",
+        location: "app/components/Dashboard.tsx:documentClickCapture",
+        message: "Document click captured during confirm",
+        data: {
+          clientX: event.clientX,
+          clientY: event.clientY,
+          targetTag: target?.tagName ?? null,
+          targetText: target?.textContent?.trim().slice(0, 80) ?? null,
+          targetAriaLabel: target?.getAttribute("aria-label") ?? null,
+          withinButton: Boolean(button && target && button.contains(target)),
+          buttonLeft: rect ? Math.round(rect.left) : null,
+          buttonRight: rect ? Math.round(rect.right) : null,
+          buttonTop: rect ? Math.round(rect.top) : null,
+          buttonBottom: rect ? Math.round(rect.bottom) : null,
+        },
+      });
+      // #endregion
+    }
+
+    document.addEventListener("click", handleDocumentClick, true);
+
+    return () => {
+      document.removeEventListener("click", handleDocumentClick, true);
+    };
   }, [showClearConfirm]);
 
   function handleClearDataClick() {
@@ -201,6 +258,7 @@ export function Dashboard({
                   {headerLabel}
                 </h1>
                 <button
+                  ref={clearButtonRef}
                   type="button"
                   onClick={handleClearDataClick}
                   className={cn(
