@@ -182,7 +182,7 @@ export function usePortfolio() {
     }
 
     void fetchData(positionsRef.current, "/api/portfolio/refresh");
-  }, [fetchData, isMobile]);
+  }, [fetchData, layoutMode]);
 
   useEffect(() => {
     if (!positions) {

@@ -359,8 +359,8 @@ async function fetchQuotesUncached(
         longName: getTextOrFallback(
           q.longName,
           getTextOrFallback(
-            q.shortName,
-            previousQuote?.longName ?? previousQuote?.shortName ?? ""
+            previousQuote?.longName,
+            getTextOrFallback(q.shortName, previousQuote?.shortName ?? "")
           )
         ),
       };
