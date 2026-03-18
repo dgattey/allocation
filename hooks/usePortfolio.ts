@@ -99,7 +99,9 @@ export function usePortfolio() {
   const positionsRef = useRef<FidelityPosition[] | null>(null);
   const filtersRef = useRef(filters);
   const selectedFundsRef = useRef(selectedFunds);
-  const lastLayoutModeRef = useRef<"mobile" | "desktop" | null>(null);
+  const lastLayoutModeRef = useRef<"mobile" | "desktop">(
+    isMobile ? "mobile" : "desktop"
+  );
 
   positionsRef.current = positions;
   filtersRef.current = filters;
@@ -107,6 +109,7 @@ export function usePortfolio() {
   const treeMapLayout = isMobile
     ? MOBILE_TREE_MAP_LAYOUT
     : DESKTOP_TREE_MAP_LAYOUT;
+  const layoutMode = isMobile ? "mobile" : "desktop";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -171,7 +174,6 @@ export function usePortfolio() {
   }, [fetchData]);
 
   useEffect(() => {
-    const layoutMode = isMobile ? "mobile" : "desktop";
     if (lastLayoutModeRef.current === layoutMode) return;
     lastLayoutModeRef.current = layoutMode;
 
@@ -305,6 +307,9 @@ export function usePortfolio() {
 
       return window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
     });
+    lastLayoutModeRef.current = window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches
+      ? "mobile"
+      : "desktop";
     mountedRef.current = false;
     if (pollRef.current) {
       clearInterval(pollRef.current);
