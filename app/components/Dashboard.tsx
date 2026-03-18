@@ -152,7 +152,7 @@ export function Dashboard({
       return;
     }
 
-    function handleDocumentClick(event: MouseEvent) {
+    function handleDocumentPointerDown(event: PointerEvent) {
       const target = event.target instanceof HTMLElement ? event.target : null;
       const button = clearButtonRef.current;
       const rect = button?.getBoundingClientRect();
@@ -160,8 +160,8 @@ export function Dashboard({
       // #region agent log
       logDebugEvent({
         hypothesisId: "D",
-        location: "app/components/Dashboard.tsx:documentClickCapture",
-        message: "Document click captured during confirm",
+        location: "app/components/Dashboard.tsx:documentPointerDownCapture",
+        message: "Document pointerdown captured during confirm",
         data: {
           clientX: event.clientX,
           clientY: event.clientY,
@@ -178,10 +178,14 @@ export function Dashboard({
       // #endregion
     }
 
-    document.addEventListener("click", handleDocumentClick, true);
+    document.addEventListener("pointerdown", handleDocumentPointerDown, true);
 
     return () => {
-      document.removeEventListener("click", handleDocumentClick, true);
+      document.removeEventListener(
+        "pointerdown",
+        handleDocumentPointerDown,
+        true
+      );
     };
   }, [showClearConfirm]);
 
@@ -241,6 +245,32 @@ export function Dashboard({
     }, 3000);
   }
 
+  function handleClearButtonPointerDown() {
+    // #region agent log
+    logDebugEvent({
+      hypothesisId: "E",
+      location: "app/components/Dashboard.tsx:buttonPointerDown",
+      message: "Clear button pointerdown",
+      data: {
+        showClearConfirm,
+      },
+    });
+    // #endregion
+  }
+
+  function handleClearButtonClickCapture() {
+    // #region agent log
+    logDebugEvent({
+      hypothesisId: "E",
+      location: "app/components/Dashboard.tsx:buttonClickCapture",
+      message: "Clear button click capture",
+      data: {
+        showClearConfirm,
+      },
+    });
+    // #endregion
+  }
+
   return (
     <div className="min-h-screen pb-20 animate-fade-in">
       {/* Sticky Header */}
@@ -260,6 +290,8 @@ export function Dashboard({
                 <button
                   ref={clearButtonRef}
                   type="button"
+                  onPointerDown={handleClearButtonPointerDown}
+                  onClickCapture={handleClearButtonClickCapture}
                   onClick={handleClearDataClick}
                   className={cn(
                     "inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2",
