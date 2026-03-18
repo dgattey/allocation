@@ -1,6 +1,7 @@
 import type { QuoteData, FundHolding } from "../types";
 
 import YahooFinance from "yahoo-finance2";
+import { fetchDirectFundHoldings } from "./holdings";
 
 // Singleton instance
 let yahooFinanceInstance: InstanceType<typeof YahooFinance> | null = null;
@@ -220,8 +221,37 @@ export async function fetchQuotes(
 
 // === Holdings fetching ===
 
+async function fetchYahooDirectHoldingsForSymbol(
+  symbol: string
+): Promise<FundHolding[]> {
+  const yahooFinance = getYahooFinance();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const summary: any = await yahooFinance.quoteSummary(symbol, {
+    modules: ["topHoldings"],
+  });
+
+  const holdings: FundHolding[] = [];
+  const topHoldings = summary?.topHoldings?.holdings;
+
+  if (topHoldings && Array.isArray(topHoldings)) {
+    for (const h of topHoldings) {
+      if (h.symbol && h.holdingPercent !== undefined) {
+        holdings.push({
+          symbol: h.symbol,
+          holdingName: h.holdingName || h.symbol,
+          holdingPercent: h.holdingPercent,
+        });
+      }
+    }
+  }
+
+  return holdings;
+}
+
 /**
- * Fetch the direct holdings Yahoo reports for a single fund/ETF symbol.
+ * Fetch the direct holdings reported for a single fund/ETF symbol.
+ * SEC N-PORT is preferred when supported; Yahoo topHoldings is the fallback.
  */
 async function fetchDirectHoldingsForSymbol(
   symbol: string,
@@ -248,50 +278,31 @@ async function fetchDirectHoldingsForSymbol(
     lookupCandidates.splice(0, lookupCandidates.length, ...resolvedSymbols);
   }
 
-  try {
-    const yahooFinance = getYahooFinance();
-    for (const candidateSymbol of lookupCandidates) {
-      if (
-        SKIP_SYMBOLS.has(candidateSymbol) ||
-        isNonStandardSymbol(candidateSymbol)
-      ) {
-        continue;
-      }
-
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const summary: any = await yahooFinance.quoteSummary(candidateSymbol, {
-          modules: ["topHoldings"],
-        });
-
-        const holdings: FundHolding[] = [];
-        const topHoldings = summary?.topHoldings?.holdings;
-
-        if (topHoldings && Array.isArray(topHoldings)) {
-          for (const h of topHoldings) {
-            if (h.symbol && h.holdingPercent !== undefined) {
-              holdings.push({
-                symbol: h.symbol,
-                holdingName: h.holdingName || h.symbol,
-                holdingPercent: h.holdingPercent,
-              });
-            }
-          }
-        }
-
-        if (holdings.length > 0) {
-          holdingsCache.set(symbol, { data: holdings, timestamp: Date.now() });
-          return holdings;
-        }
-      } catch (candidateError) {
-        console.error(
-          `Error fetching holdings for proxy ${candidateSymbol} of ${symbol}:`,
-          candidateError
-        );
-      }
+  for (const candidateSymbol of lookupCandidates) {
+    if (
+      SKIP_SYMBOLS.has(candidateSymbol) ||
+      isNonStandardSymbol(candidateSymbol)
+    ) {
+      continue;
     }
-  } catch (error) {
-    console.error(`Error fetching holdings for ${symbol}:`, error);
+
+    try {
+      const holdings = await fetchDirectFundHoldings({
+        symbol: candidateSymbol,
+        description,
+        fetchYahooHoldings: fetchYahooDirectHoldingsForSymbol,
+      });
+
+      if (holdings.length > 0) {
+        holdingsCache.set(symbol, { data: holdings, timestamp: Date.now() });
+        return holdings;
+      }
+    } catch (candidateError) {
+      console.error(
+        `Error fetching holdings for proxy ${candidateSymbol} of ${symbol}:`,
+        candidateError
+      );
+    }
   }
 
   // Cache even empty results (means this symbol has no holdings data)
