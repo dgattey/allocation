@@ -93,6 +93,16 @@ export function Dashboard({
                 >
                   {headerLabel}
                 </h1>
+                {focusedSummary && focusedFund && (
+                  <p className="mt-2 max-w-2xl text-xs leading-5 text-text-muted">
+                    Showing underlying holdings derived from target-year fund{" "}
+                    <span className="font-medium text-text-primary">
+                      {focusedFund}
+                    </span>
+                    . Values below are allocated from this fund so it is clear
+                    where the breakdown comes from.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-baseline gap-4">

@@ -71,4 +71,38 @@ describe("Dashboard clear action", () => {
     fireEvent.click(screen.getByRole("button", { name: /clear file/i }));
     expect(onClearData).toHaveBeenCalledTimes(1);
   });
+
+  it("explains that focused holdings are derived from the selected fund", () => {
+    render(
+      <Dashboard
+        portfolioData={portfolioData}
+        filteredTreeMapNodes={[]}
+        filteredRows={[]}
+        filters={{ investmentTypes: [], accounts: [] }}
+        onFiltersChange={vi.fn()}
+        sortConfig={{ key: "totalValue", direction: "desc" }}
+        onSort={vi.fn()}
+        expandedRows={new Set()}
+        onToggleExpand={vi.fn()}
+        onClearData={vi.fn()}
+        isLoading={false}
+        viewMode="holdings"
+        onViewModeChange={vi.fn()}
+        focusedFund="09261F572"
+        onFocusFund={vi.fn()}
+        focusedSummary={{
+          value: 137194.21,
+          gainLoss: 94943.14,
+          gainLossPercent: 39.48,
+          name: "BTC LPATH IDX 2055 M",
+          color: "#7dd3fc",
+        }}
+      />
+    );
+
+    expect(
+      screen.getByText(/showing underlying holdings derived from target-year fund/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText("09261F572")).toBeInTheDocument();
+  });
 });
