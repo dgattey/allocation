@@ -40,8 +40,15 @@ const YAHOO_SYMBOL_MAP: Record<string, string> = {
 const SKIP_SYMBOLS = new Set(["FZFXX", "FDRXX", "SPAXX"]);
 
 /** Symbols with non-standard format (e.g. 401K fund identifiers) */
-function isNonStandardSymbol(symbol: string): boolean {
-  return /^\d/.test(symbol) || symbol.length > 8;
+const YAHOO_SYMBOL_PATTERN = /^[A-Z0-9-]+(?:\.[A-Z]+)?$/i;
+
+export function shouldSkipYahooSymbol(symbol: string): boolean {
+  const normalized = symbol.trim().toUpperCase();
+  if (!normalized || normalized.length > 15) return true;
+  if (!YAHOO_SYMBOL_PATTERN.test(normalized)) return true;
+
+  const [baseSymbol, exchangeSuffix] = normalized.split(".", 2);
+  return /^\d+$/.test(baseSymbol) && !exchangeSuffix;
 }
 
 function toYahooSymbol(symbol: string): string {
@@ -63,7 +70,7 @@ export async function fetchQuotes(
 
   // Check cache first
   for (const sym of symbols) {
-    if (SKIP_SYMBOLS.has(sym) || isNonStandardSymbol(sym)) continue;
+    if (SKIP_SYMBOLS.has(sym) || shouldSkipYahooSymbol(sym)) continue;
     const cached = quoteCache.get(sym);
     if (isCacheValid(cached, QUOTE_TTL)) {
       result[sym] = cached!.data;
@@ -131,7 +138,7 @@ async function fetchHoldingsForSymbol(
     return cached!.data;
   }
 
-  if (SKIP_SYMBOLS.has(symbol) || isNonStandardSymbol(symbol)) {
+  if (SKIP_SYMBOLS.has(symbol) || shouldSkipYahooSymbol(symbol)) {
     return [];
   }
 
