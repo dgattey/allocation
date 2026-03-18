@@ -78,6 +78,7 @@ export interface UsePortfolioResult {
   isMobile: boolean;
   isLoading: boolean;
   error: string | null;
+  restoredFromStorage: boolean;
   portfolioData: PortfolioData | null;
   filteredRows: TableRow[];
   filteredTreeMapNodes: TreeMapNode[];
@@ -109,6 +110,7 @@ export function usePortfolio(): UsePortfolioResult {
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [restoredFromStorage, setRestoredFromStorage] = useState(false);
 
   const [filters, setFiltersState] = useState<FilterState>(createDefaultFilters);
   const [sortConfig, setSortConfig] = useState<SortConfig>(createDefaultSortConfig);
@@ -193,7 +195,9 @@ export function usePortfolio(): UsePortfolioResult {
       return;
     }
 
+    resetInitialScrollPosition();
     const cachedPortfolioData = loadPortfolioData();
+    setRestoredFromStorage(true);
     setPositions(saved);
     if (cachedPortfolioData) {
       setPortfolioData(cachedPortfolioData);
@@ -332,6 +336,7 @@ export function usePortfolio(): UsePortfolioResult {
     setPositions(null);
     setPortfolioData(null);
     setError(null);
+    setRestoredFromStorage(false);
     setExpandedRows(new Set());
     setFiltersState(createDefaultFilters());
     setSelectedFundsState([]);
@@ -405,6 +410,7 @@ export function usePortfolio(): UsePortfolioResult {
     isMobile,
     isLoading,
     error,
+    restoredFromStorage,
     portfolioData,
     filteredRows,
     filteredTreeMapNodes,
@@ -429,6 +435,20 @@ export function usePortfolio(): UsePortfolioResult {
     treeMapHeight: treeMapLayout.height,
     activeSummary,
   };
+}
+
+function resetInitialScrollPosition() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const previousScrollRestoration = window.history.scrollRestoration;
+  window.history.scrollRestoration = "manual";
+  window.scrollTo(0, 0);
+
+  window.setTimeout(() => {
+    window.history.scrollRestoration = previousScrollRestoration;
+  }, 0);
 }
 
 function areStringArraysEqual(a: string[], b: string[]): boolean {

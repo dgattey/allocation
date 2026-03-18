@@ -4,25 +4,36 @@ import { Dashboard } from "../Dashboard";
 import type { PortfolioData } from "@/lib/types";
 
 vi.mock("../TreeMap", () => ({
-  TreeMap: (props: { isMobile?: boolean }) => (
-    <div data-testid="tree-map" data-mobile={props.isMobile ? "true" : "false"} />
+  TreeMap: (props: { isMobile?: boolean; enableIntroAnimation?: boolean }) => (
+    <div
+      data-testid="tree-map"
+      data-mobile={props.isMobile ? "true" : "false"}
+      data-intro-animation={props.enableIntroAnimation ? "true" : "false"}
+    />
   ),
 }));
 
 vi.mock("../PortfolioTable", () => ({
-  PortfolioTable: (props: { isMobile?: boolean }) => (
+  PortfolioTable: (props: {
+    isMobile?: boolean;
+    enableIntroAnimation?: boolean;
+    enableValueAnimations?: boolean;
+  }) => (
     <div
       data-testid="portfolio-table"
       data-mobile={props.isMobile ? "true" : "false"}
+      data-intro-animation={props.enableIntroAnimation ? "true" : "false"}
+      data-value-animations={props.enableValueAnimations ? "true" : "false"}
     />
   ),
 }));
 
 vi.mock("../FloatingToolbar", () => ({
-  FloatingToolbar: (props: { isMobile?: boolean }) => (
+  FloatingToolbar: (props: { isMobile?: boolean; enableIntroAnimation?: boolean }) => (
     <div
       data-testid="floating-toolbar"
       data-mobile={props.isMobile ? "true" : "false"}
+      data-intro-animation={props.enableIntroAnimation ? "true" : "false"}
     />
   ),
 }));
@@ -32,16 +43,24 @@ const portfolioData: PortfolioData = {
   tableRows: [],
   positionRows: [],
   summary: {
-    totalValue: 100000,
-    totalGainLoss: 5000,
-    totalGainLossPercent: 5,
-    accounts: ["DG 401K"],
-    investmentTypes: ["Others"],
+    totalValue: 20000,
+    totalGainLoss: 1200,
+    totalGainLossPercent: 6,
+    accounts: ["Account A"],
+    investmentTypes: ["ETFs"],
   },
   lastUpdated: new Date().toISOString(),
 };
 
-function renderDashboard(onClearData = vi.fn()) {
+function renderDashboard({
+  onClearData = vi.fn(),
+  enableIntroAnimation,
+  enableValueAnimations,
+}: {
+  onClearData?: () => void;
+  enableIntroAnimation?: boolean;
+  enableValueAnimations?: boolean;
+} = {}) {
   return {
     onClearData,
     ...render(
@@ -70,16 +89,18 @@ function renderDashboard(onClearData = vi.fn()) {
         activeSummary={null}
         treeMapWidth={1200}
         treeMapHeight={400}
+        enableIntroAnimation={enableIntroAnimation}
+        enableValueAnimations={enableValueAnimations}
       />
     ),
   };
 }
 
 describe("Dashboard clear action", () => {
-  it("shows Full portfolio when nothing is filtered", () => {
+  it("shows Your portfolio when nothing is filtered", () => {
     renderDashboard();
 
-    expect(screen.getByText("Full portfolio")).toBeInTheDocument();
+    expect(screen.getByText("Your portfolio")).toBeInTheDocument();
   });
 
   it("renders a visible larger clear button", () => {
@@ -119,14 +140,14 @@ describe("Dashboard clear action", () => {
         onViewModeChange={vi.fn()}
         treeMapGrouping="fund"
         onTreeMapGroupingChange={vi.fn()}
-        selectedFunds={["09261F572", "VTI"]}
+        selectedFunds={["FUND-A", "FUND-B"]}
         onToggleFund={vi.fn()}
         onClearFunds={vi.fn()}
         fundOptions={[]}
         activeSummary={{
-          value: 137194.21,
-          gainLoss: 94943.14,
-          gainLossPercent: 39.48,
+          value: 12500,
+          gainLoss: 2800,
+          gainLossPercent: 28,
           label: "2 funds selected",
         }}
         treeMapWidth={1200}
@@ -177,6 +198,31 @@ describe("Dashboard clear action", () => {
     expect(screen.getByTestId("floating-toolbar")).toHaveAttribute(
       "data-mobile",
       "true"
+    );
+  });
+
+  it("disables intro animations across the restored dashboard shell", () => {
+    const { container } = renderDashboard({
+      enableIntroAnimation: false,
+      enableValueAnimations: false,
+    });
+
+    expect(container.firstChild).not.toHaveClass("animate-fade-in");
+    expect(screen.getByTestId("tree-map")).toHaveAttribute(
+      "data-intro-animation",
+      "false"
+    );
+    expect(screen.getByTestId("portfolio-table")).toHaveAttribute(
+      "data-intro-animation",
+      "false"
+    );
+    expect(screen.getByTestId("portfolio-table")).toHaveAttribute(
+      "data-value-animations",
+      "false"
+    );
+    expect(screen.getByTestId("floating-toolbar")).toHaveAttribute(
+      "data-intro-animation",
+      "false"
     );
   });
 });

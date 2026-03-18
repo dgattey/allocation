@@ -6,22 +6,22 @@ import { usePortfolio } from "../usePortfolio";
 
 const positions: FidelityPosition[] = [
   {
-    accountNumber: "1234",
-    accountName: "Brokerage",
+    accountNumber: "TEST-0001",
+    accountName: "Account A",
     investmentType: "Stocks",
-    symbol: "AAPL",
-    description: "Apple Inc.",
-    quantity: 10,
-    lastPrice: 180,
-    lastPriceChange: 1.2,
-    currentValue: 1800,
+    symbol: "ASSET-A",
+    description: "Synthetic Asset A",
+    quantity: 12,
+    lastPrice: 50,
+    lastPriceChange: 1,
+    currentValue: 600,
     todayGainLossDollar: 12,
-    todayGainLossPercent: 0.67,
-    totalGainLossDollar: 400,
-    totalGainLossPercent: 28.57,
+    todayGainLossPercent: 2,
+    totalGainLossDollar: 120,
+    totalGainLossPercent: 25,
     percentOfAccount: 100,
-    costBasisTotal: 1400,
-    averageCostBasis: 140,
+    costBasisTotal: 480,
+    averageCostBasis: 40,
     type: "Equity",
   },
 ];
@@ -31,10 +31,10 @@ const cachedData: PortfolioData = {
   tableRows: [],
   positionRows: [],
   summary: {
-    totalValue: 1800,
-    totalGainLoss: 400,
-    totalGainLossPercent: 28.57,
-    accounts: ["Brokerage"],
+    totalValue: 600,
+    totalGainLoss: 120,
+    totalGainLossPercent: 25,
+    accounts: ["Account A"],
     investmentTypes: ["Stocks"],
   },
   lastUpdated: "2026-03-18T00:00:00.000Z",
@@ -44,9 +44,9 @@ const refreshedData: PortfolioData = {
   ...cachedData,
   summary: {
     ...cachedData.summary,
-    totalValue: 1900,
-    totalGainLoss: 500,
-    totalGainLossPercent: 35.71,
+    totalValue: 720,
+    totalGainLoss: 180,
+    totalGainLossPercent: 33.33,
   },
   lastUpdated: "2026-03-18T00:05:00.000Z",
 };
@@ -55,6 +55,7 @@ describe("usePortfolio startup cache restore", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("restores cached dashboard data before the refresh request finishes", async () => {
@@ -69,15 +70,18 @@ describe("usePortfolio startup cache restore", () => {
         })
     );
     vi.stubGlobal("fetch", fetchMock);
+    const scrollToSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
 
     const { result } = renderHook(() => usePortfolio());
 
     await waitFor(() => {
       expect(result.current.hasData).toBe(true);
       expect(result.current.portfolioData).toEqual(cachedData);
+      expect(result.current.restoredFromStorage).toBe(true);
     });
 
     expect(result.current.isLoading).toBe(true);
+    expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
     expect(fetchMock).toHaveBeenCalledWith("/api/portfolio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

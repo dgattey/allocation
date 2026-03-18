@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockQuote = vi.fn();
 const mockQuoteSummary = vi.fn();
 const mockSearch = vi.fn();
-const mockFetchDirectFundHoldings = vi.fn();
 
 vi.mock("yahoo-finance2", () => {
   class MockYahooFinance {
@@ -16,10 +15,6 @@ vi.mock("yahoo-finance2", () => {
     default: MockYahooFinance,
   };
 });
-
-vi.mock("../holdings", () => ({
-  fetchDirectFundHoldings: mockFetchDirectFundHoldings,
-}));
 
 describe("shouldSkipYahooSymbol", () => {
   it("keeps exchange-qualified numeric symbols fetchable", async () => {
@@ -34,7 +29,7 @@ describe("shouldSkipYahooSymbol", () => {
     const { shouldSkipYahooSymbol } = await import("../yahoo");
 
     expect(shouldSkipYahooSymbol("12345")).toBe(true);
-    expect(shouldSkipYahooSymbol("09261F572")).toBe(true);
+    expect(shouldSkipYahooSymbol("900000001")).toBe(true);
   });
 
   it("skips malformed symbols", async () => {
@@ -51,16 +46,6 @@ describe("yahoo fund symbol lookups", () => {
     mockQuote.mockReset();
     mockQuoteSummary.mockReset();
     mockSearch.mockReset();
-    mockFetchDirectFundHoldings.mockReset();
-    mockFetchDirectFundHoldings.mockImplementation(
-      async ({
-        symbol,
-        fetchYahooHoldings,
-      }: {
-        symbol: string;
-        fetchYahooHoldings: (lookupSymbol: string) => Promise<unknown>;
-      }) => fetchYahooHoldings(symbol)
-    );
   });
 
   it("automatically resolves a public proxy share class from description", async () => {
@@ -69,21 +54,21 @@ describe("yahoo fund symbol lookups", () => {
       .mockResolvedValueOnce({
         quotes: [
           {
-            symbol: "LIVKX",
-            longname: "BlackRock LifePath Index 2055 K",
-            shortname: "BlackRock LifePath Index 2055",
+            symbol: "ALPKX",
+            longname: "Alpha LifePath Index 2055 K",
+            shortname: "Alpha LifePath Index 2055",
             quoteType: "MUTUALFUND",
           },
         ],
       });
     mockQuoteSummary.mockImplementation(async (symbol: string) => {
-      if (symbol === "LIVKX") {
+      if (symbol === "ALPKX") {
         return {
           topHoldings: {
             holdings: [
               {
-                symbol: "IXUS",
-                holdingName: "iShares Core MSCI Total Intl Stk ETF",
+                symbol: "ETFQ",
+                holdingName: "Synthetic International Equity ETF",
                 holdingPercent: 0.3753278,
               },
             ],
@@ -96,23 +81,23 @@ describe("yahoo fund symbol lookups", () => {
 
     const { fetchAllHoldings } = await import("../yahoo");
     const result = await fetchAllHoldings([
-      { symbol: "09261F572", description: "BTC LPATH IDX 2055 M" },
+      { symbol: "900000001", description: "ALP LPATH IDX 2055 M" },
     ]);
 
-    expect(mockSearch).toHaveBeenNthCalledWith(1, "BTC LIFEPATH INDEX 2055");
+    expect(mockSearch).toHaveBeenNthCalledWith(1, "ALP LIFEPATH INDEX 2055");
     expect(mockSearch).toHaveBeenNthCalledWith(2, "LIFEPATH INDEX 2055");
-    expect(mockQuoteSummary).toHaveBeenCalledWith("LIVKX", {
+    expect(mockQuoteSummary).toHaveBeenCalledWith("ALPKX", {
       modules: ["topHoldings"],
     });
-    expect(result["09261F572"]).toEqual([
+    expect(result["900000001"]).toEqual([
       {
-        symbol: "09261F572",
-        holdingName: "Rest of BTC LPATH IDX 2055 M",
+        symbol: "900000001",
+        holdingName: "Rest of ALP LPATH IDX 2055 M",
         holdingPercent: 0.6246722,
       },
       {
-        symbol: "IXUS",
-        holdingName: "iShares Core MSCI Total Intl Stk ETF",
+        symbol: "ETFQ",
+        holdingName: "Synthetic International Equity ETF",
         holdingPercent: 0.3753278,
       },
     ]);
@@ -125,8 +110,8 @@ describe("yahoo fund symbol lookups", () => {
           topHoldings: {
             holdings: [
               {
-                symbol: "IXUS",
-                holdingName: "iShares Core MSCI Total Intl Stk ETF",
+                symbol: "ETFQ",
+                holdingName: "Synthetic International Equity ETF",
                 holdingPercent: 0.6,
               },
               {
@@ -139,18 +124,18 @@ describe("yahoo fund symbol lookups", () => {
         };
       }
 
-      if (symbol === "IXUS") {
+      if (symbol === "ETFQ") {
         return {
           topHoldings: {
             holdings: [
               {
-                symbol: "2330.TW",
-                holdingName: "Taiwan Semiconductor Manufacturing Co Ltd",
+                symbol: "EQTY1.TW",
+                holdingName: "Synthetic Asia Equity",
                 holdingPercent: 0.5,
               },
               {
-                symbol: "005930.KS",
-                holdingName: "Samsung Electronics Co Ltd",
+                symbol: "EQTY2.KS",
+                holdingName: "Synthetic Korea Equity",
                 holdingPercent: 0.25,
               },
             ],
@@ -166,20 +151,20 @@ describe("yahoo fund symbol lookups", () => {
 
     expect(result.TARGET.map(({ symbol, holdingName }) => ({ symbol, holdingName }))).toEqual([
       {
-        symbol: "2330.TW",
-        holdingName: "Taiwan Semiconductor Manufacturing Co Ltd",
+        symbol: "EQTY1.TW",
+        holdingName: "Synthetic Asia Equity",
       },
       {
         symbol: "CASHX",
         holdingName: "Cash Sleeve",
       },
       {
-        symbol: "005930.KS",
-        holdingName: "Samsung Electronics Co Ltd",
+        symbol: "EQTY2.KS",
+        holdingName: "Synthetic Korea Equity",
       },
       {
-        symbol: "IXUS",
-        holdingName: "Rest of iShares Core MSCI Total Intl Stk ETF",
+        symbol: "ETFQ",
+        holdingName: "Rest of Synthetic International Equity ETF",
       },
       {
         symbol: "TARGET",
@@ -196,22 +181,13 @@ describe("yahoo fund symbol lookups", () => {
     ).toBeCloseTo(1);
   });
 
-  it("falls back to Yahoo top holdings when SEC data is unavailable", async () => {
-    mockFetchDirectFundHoldings.mockImplementation(
-      async ({
-        symbol,
-        fetchYahooHoldings,
-      }: {
-        symbol: string;
-        fetchYahooHoldings: (lookupSymbol: string) => Promise<unknown>;
-      }) => fetchYahooHoldings(symbol)
-    );
+  it("uses Yahoo top holdings for direct fund lookups", async () => {
     mockQuoteSummary.mockResolvedValueOnce({
       topHoldings: {
         holdings: [
           {
-            symbol: "AAPL",
-            holdingName: "Apple Inc.",
+            symbol: "EQTYA",
+            holdingName: "Synthetic Equity A",
             holdingPercent: 0.12,
           },
         ],
@@ -219,87 +195,74 @@ describe("yahoo fund symbol lookups", () => {
     });
 
     const { fetchAllHoldings } = await import("../yahoo");
-    const result = await fetchAllHoldings([{ symbol: "LIVKX" }]);
+    const result = await fetchAllHoldings([{ symbol: "ALPKX" }]);
 
-    expect(mockFetchDirectFundHoldings).toHaveBeenCalledWith(
-      expect.objectContaining({
-        symbol: "LIVKX",
-      })
-    );
-    expect(mockQuoteSummary).toHaveBeenCalledWith("LIVKX", {
+    expect(mockQuoteSummary).toHaveBeenCalledWith("ALPKX", {
       modules: ["topHoldings"],
     });
-    expect(result.LIVKX).toEqual([
+    expect(result.ALPKX).toEqual([
       {
-        symbol: "LIVKX",
-        holdingName: "Rest of LIVKX",
+        symbol: "ALPKX",
+        holdingName: "Rest of ALPKX",
         holdingPercent: 0.88,
       },
       {
-        symbol: "AAPL",
-        holdingName: "Apple Inc.",
+        symbol: "EQTYA",
+        holdingName: "Synthetic Equity A",
         holdingPercent: 0.12,
       },
     ]);
   });
 
-  it("passes proxy-resolved funds through SEC-backed lookup before falling back", async () => {
+  it("passes proxy-resolved funds through the direct holdings lookup", async () => {
     mockSearch
       .mockResolvedValueOnce({ quotes: [] })
       .mockResolvedValueOnce({
         quotes: [
           {
-            symbol: "LIVKX",
-            longname: "BlackRock LifePath Index 2055 K",
-            shortname: "BlackRock LifePath Index 2055",
+            symbol: "ALPKX",
+            longname: "Alpha LifePath Index 2055 K",
+            shortname: "Alpha LifePath Index 2055",
             quoteType: "MUTUALFUND",
           },
         ],
       });
-    mockFetchDirectFundHoldings.mockImplementation(
-      async ({ symbol }: { symbol: string }) => {
-        if (symbol === "LIVKX") {
-          return [
-            {
-              symbol: "46434V373",
-              holdingName: "iShares Core MSCI Total Intl Stk ETF",
-              holdingPercent: 0.55,
-            },
-          ];
-        }
-
-        return [];
-      }
-    );
+    mockQuoteSummary.mockResolvedValueOnce({
+      topHoldings: {
+        holdings: [
+          {
+            symbol: "ETFQ",
+            holdingName: "Synthetic International Equity ETF",
+            holdingPercent: 0.55,
+          },
+        ],
+      },
+    });
 
     const { fetchAllHoldings } = await import("../yahoo");
     const result = await fetchAllHoldings([
-      { symbol: "09261F572", description: "BTC LPATH IDX 2055 M" },
+      { symbol: "900000001", description: "ALP LPATH IDX 2055 M" },
     ]);
 
-    expect(mockFetchDirectFundHoldings).toHaveBeenCalledWith(
-      expect.objectContaining({
-        symbol: "LIVKX",
-        description: "BTC LPATH IDX 2055 M",
-      })
-    );
-    expect(mockQuoteSummary).not.toHaveBeenCalled();
-    expect(result["09261F572"]).toHaveLength(2);
-    expect(result["09261F572"][0]).toMatchObject({
-      symbol: "46434V373",
-      holdingName: "iShares Core MSCI Total Intl Stk ETF",
+    expect(mockQuoteSummary).toHaveBeenCalledWith("ALPKX", {
+      modules: ["topHoldings"],
     });
-    expect(result["09261F572"][0]?.holdingPercent).toBeCloseTo(0.55);
-    expect(result["09261F572"][1]).toMatchObject({
-      symbol: "09261F572",
-      holdingName: "Rest of BTC LPATH IDX 2055 M",
+    expect(result["900000001"]).toHaveLength(2);
+    expect(result["900000001"][0]).toMatchObject({
+      symbol: "ETFQ",
+      holdingName: "Synthetic International Equity ETF",
     });
-    expect(result["09261F572"][1]?.holdingPercent).toBeCloseTo(0.45);
+    expect(result["900000001"][0]?.holdingPercent).toBeCloseTo(0.55);
+    expect(result["900000001"][1]).toMatchObject({
+      symbol: "900000001",
+      holdingName: "Rest of ALP LPATH IDX 2055 M",
+    });
+    expect(result["900000001"][1]?.holdingPercent).toBeCloseTo(0.45);
   });
 
   it("still skips quote lookups for internal non-market symbols", async () => {
     const { fetchQuotes } = await import("../yahoo");
-    const result = await fetchQuotes(["09261F572"]);
+    const result = await fetchQuotes(["900000001"]);
 
     expect(mockQuote).not.toHaveBeenCalled();
     expect(result).toEqual({});

@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-// Mock the hooks and child components to test routing logic in isolation
 vi.mock("@/hooks/usePortfolio", () => ({
   usePortfolio: vi.fn(),
 }));
 
-vi.mock("../UploadView", () => ({
+vi.mock("../components/UploadView", () => ({
   UploadView: (props: { isLoading?: boolean; error?: string | null }) => (
     <div data-testid="upload-view">
       {props.isLoading && <span>Loading</span>}
@@ -16,11 +15,22 @@ vi.mock("../UploadView", () => ({
   ),
 }));
 
-vi.mock("../Dashboard", () => ({
-  Dashboard: () => <div data-testid="dashboard">Dashboard</div>,
+vi.mock("../components/Dashboard", () => ({
+  Dashboard: (props: {
+    enableIntroAnimation?: boolean;
+    enableValueAnimations?: boolean;
+  }) => (
+    <div
+      data-testid="dashboard"
+      data-intro-animation={props.enableIntroAnimation ? "true" : "false"}
+      data-value-animations={props.enableValueAnimations ? "true" : "false"}
+    >
+      Dashboard
+    </div>
+  ),
 }));
 
-import Home from "../../page";
+import Home from "../page";
 import { usePortfolio, type UsePortfolioResult } from "@/hooks/usePortfolio";
 
 const mockUsePortfolio = vi.mocked(usePortfolio);
@@ -33,6 +43,7 @@ function makePortfolioReturn(
     isMobile: false,
     isLoading: false,
     error: null,
+    restoredFromStorage: false,
     portfolioData: null,
     filteredRows: [],
     filteredTreeMapNodes: [],
@@ -53,9 +64,9 @@ function makePortfolioReturn(
     clearSelectedFunds: vi.fn(),
     resetFilters: vi.fn(),
     fundOptions: [],
-    activeSummary: null,
     treeMapWidth: 1200,
     treeMapHeight: 400,
+    activeSummary: null,
     ...overrides,
   };
 
@@ -79,11 +90,9 @@ describe("Home page routing", () => {
       makePortfolioReturn({ hasData: true, portfolioData: null, isLoading: true })
     );
     render(<Home />);
-    // The loading skeleton has shimmer divs
+    const skeletons = document.querySelectorAll(".skeleton");
     expect(screen.queryByTestId("upload-view")).not.toBeInTheDocument();
     expect(screen.queryByTestId("dashboard")).not.toBeInTheDocument();
-    // Check for skeleton elements
-    const skeletons = document.querySelectorAll(".skeleton");
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
@@ -101,12 +110,58 @@ describe("Home page routing", () => {
       },
       lastUpdated: new Date().toISOString(),
     };
+
     mockUsePortfolio.mockReturnValue(
       makePortfolioReturn({ hasData: true, portfolioData: mockData })
     );
+
     render(<Home />);
+
     expect(screen.getByTestId("dashboard")).toBeInTheDocument();
     expect(screen.queryByTestId("upload-view")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard")).toHaveAttribute(
+      "data-intro-animation",
+      "true"
+    );
+    expect(screen.getByTestId("dashboard")).toHaveAttribute(
+      "data-value-animations",
+      "true"
+    );
+  });
+
+  it("disables intro and value animations while a restored session settles", () => {
+    const mockData = {
+      treeMapNodes: [],
+      tableRows: [],
+      positionRows: [],
+      summary: {
+        totalValue: 100000,
+        totalGainLoss: 5000,
+        totalGainLossPercent: 5,
+        accounts: ["Account1"],
+        investmentTypes: ["Stocks"],
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+
+    mockUsePortfolio.mockReturnValue(
+      makePortfolioReturn({
+        hasData: true,
+        portfolioData: mockData,
+        restoredFromStorage: true,
+      })
+    );
+
+    render(<Home />);
+
+    expect(screen.getByTestId("dashboard")).toHaveAttribute(
+      "data-intro-animation",
+      "false"
+    );
+    expect(screen.getByTestId("dashboard")).toHaveAttribute(
+      "data-value-animations",
+      "false"
+    );
   });
 
   it("passes error to UploadView when present", () => {

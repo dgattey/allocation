@@ -18,6 +18,8 @@ interface PortfolioTableProps {
   expandedRows: Set<string>;
   onToggleExpand: (symbol: string) => void;
   isMobile?: boolean;
+  enableIntroAnimation?: boolean;
+  enableValueAnimations?: boolean;
 }
 
 const SORTABLE_COLUMNS: {
@@ -34,7 +36,7 @@ const SORTABLE_COLUMNS: {
   {
     key: FIFTY_TWO_WEEK_POSITION_SORT_KEY,
     label: "52W Range",
-    minWidthClass: "min-w-[12rem]",
+    minWidthClass: "min-w-[10.5rem] xl:min-w-[12rem]",
   },
 ];
 
@@ -45,6 +47,8 @@ export function PortfolioTable({
   expandedRows,
   onToggleExpand,
   isMobile = false,
+  enableIntroAnimation = true,
+  enableValueAnimations = true,
 }: PortfolioTableProps) {
   if (rows.length === 0) {
     return (
@@ -100,6 +104,7 @@ export function PortfolioTable({
               row={row}
               isExpanded={expandedRows.has(row.symbol)}
               onToggle={() => onToggleExpand(row.symbol)}
+              enableValueAnimations={enableValueAnimations}
             />
           ))}
         </div>
@@ -109,10 +114,13 @@ export function PortfolioTable({
 
   return (
     <div
-      className="w-full overflow-x-auto rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-md)] animate-soft-rise"
+      className={cn(
+        "w-full overflow-x-auto rounded-2xl border border-border/60 bg-surface shadow-[var(--shadow-md)]",
+        enableIntroAnimation && "animate-soft-rise"
+      )}
       style={{ "--enter-delay": "80ms" } as CSSProperties}
     >
-      <table className="w-full border-collapse min-w-[1040px]">
+      <table className="w-full border-collapse min-w-[980px] xl:min-w-[1040px]">
         <thead>
           <tr className="border-b border-border">
             {/* Sticky: Identity column */}
@@ -123,14 +131,14 @@ export function PortfolioTable({
                 "after:absolute after:right-0 after:top-0 after:bottom-0 after:w-4",
                 "after:bg-gradient-to-r after:from-transparent after:to-surface after:pointer-events-none"
               )}
-              style={{ minWidth: 240 }}
+              style={{ minWidth: 220 }}
             >
               <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
                 Holding
               </span>
             </th>
             {/* Account */}
-            <th className="text-left px-3 py-3">
+            <th className="w-[10rem] text-left px-3 py-3">
               <span className="text-xs font-medium uppercase tracking-wider text-text-muted">
                 Account
               </span>
@@ -171,6 +179,8 @@ export function PortfolioTable({
               index={idx}
               isExpanded={expandedRows.has(row.symbol)}
               onToggle={() => onToggleExpand(row.symbol)}
+              enableIntroAnimation={enableIntroAnimation}
+              enableValueAnimations={enableValueAnimations}
             />
           ))}
         </tbody>
@@ -183,10 +193,12 @@ function MobileRowCard({
   row,
   isExpanded,
   onToggle,
+  enableValueAnimations = true,
 }: {
   row: TableRow;
   isExpanded: boolean;
   onToggle: () => void;
+  enableValueAnimations?: boolean;
 }) {
   return (
     <article className="rounded-2xl border border-border/60 bg-surface p-4 shadow-[var(--shadow-md)]">
@@ -219,6 +231,7 @@ function MobileRowCard({
           <AnimatedNumber
             value={row.totalValue}
             format={formatDollar}
+            animate={enableValueAnimations}
             className="text-sm font-semibold text-text-primary"
           />
         </MetricCell>
@@ -231,6 +244,7 @@ function MobileRowCard({
           <AnimatedNumber
             value={row.currentPrice}
             format={formatPrice}
+            animate={enableValueAnimations}
             className="text-sm text-text-primary"
           />
         </MetricCell>
@@ -331,11 +345,15 @@ function TableRowGroup({
   index,
   isExpanded,
   onToggle,
+  enableIntroAnimation = true,
+  enableValueAnimations = true,
 }: {
   row: TableRow;
   index: number;
   isExpanded: boolean;
   onToggle: () => void;
+  enableIntroAnimation?: boolean;
+  enableValueAnimations?: boolean;
 }) {
   const isEven = index % 2 === 0;
 
@@ -344,7 +362,8 @@ function TableRowGroup({
       {/* Main row */}
       <tr
         className={cn(
-          "group border-b border-border-subtle transition-all duration-150 animate-soft-rise",
+          "group border-b border-border-subtle transition-all duration-150",
+          enableIntroAnimation && "animate-soft-rise",
           isEven ? "bg-transparent" : "bg-surface-hover/30",
           "hover:bg-surface-hover/60",
           row.isExpandable && "cursor-pointer"
@@ -383,7 +402,10 @@ function TableRowGroup({
           </div>
         </td>
         {/* Account */}
-        <td className="px-3 py-3 text-sm text-text-muted whitespace-nowrap">
+        <td
+          className="w-[10rem] max-w-[10rem] px-3 py-3 text-sm text-text-muted whitespace-normal leading-5"
+          title={row.accounts.join(", ")}
+        >
           {row.accounts.join(", ")}
         </td>
         {/* Type */}
@@ -399,6 +421,7 @@ function TableRowGroup({
           <AnimatedNumber
             value={row.totalValue}
             format={formatDollar}
+            animate={enableValueAnimations}
             className="text-sm font-medium text-text-primary"
           />
         </td>
@@ -411,6 +434,7 @@ function TableRowGroup({
           <AnimatedNumber
             value={row.currentPrice}
             format={formatPrice}
+            animate={enableValueAnimations}
             className="text-sm text-text-primary"
           />
         </td>
@@ -423,7 +447,7 @@ function TableRowGroup({
           <GainLoss percent={row.totalGainLossPercent} size="sm" />
         </td>
         {/* 52-Week Range */}
-        <td className="min-w-[12rem] px-3 py-3">
+        <td className="min-w-[10.5rem] px-3 py-3 xl:min-w-[12rem]">
           <FiftyTwoWeekRange
             low={row.fiftyTwoWeekLow}
             high={row.fiftyTwoWeekHigh}
@@ -461,7 +485,10 @@ function TableRowGroup({
                 size="sm"
               />
             </td>
-            <td className="px-3 py-2 text-xs text-text-muted">
+            <td
+              className="w-[10rem] max-w-[10rem] px-3 py-2 text-xs text-text-muted whitespace-normal leading-5"
+              title={source.account}
+            >
               {source.account}
             </td>
             <td className="px-3 py-2">

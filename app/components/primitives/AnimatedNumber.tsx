@@ -7,37 +7,44 @@ interface AnimatedNumberProps {
   value: number;
   format: (n: number) => string;
   className?: string;
+  animate?: boolean;
 }
+
+const POSITIVE_FLASH_CLASS = "animate-[flash-positive_600ms_ease-out]";
+const NEGATIVE_FLASH_CLASS = "animate-[flash-negative_600ms_ease-out]";
 
 export function AnimatedNumber({
   value,
   format,
   className,
+  animate = true,
 }: AnimatedNumberProps) {
   const spanRef = useRef<HTMLSpanElement>(null);
   const prevValue = useRef(value);
 
   useEffect(() => {
+    const element = spanRef.current;
+
+    if (!animate) {
+      prevValue.current = value;
+      element?.classList.remove(POSITIVE_FLASH_CLASS, NEGATIVE_FLASH_CLASS);
+      return;
+    }
+
     if (prevValue.current === value) {
       return;
     }
 
-    const element = spanRef.current;
     if (!element) {
       prevValue.current = value;
       return;
     }
 
     const flashClass =
-      value > prevValue.current
-        ? "animate-[flash-positive_600ms_ease-out]"
-        : "animate-[flash-negative_600ms_ease-out]";
+      value > prevValue.current ? POSITIVE_FLASH_CLASS : NEGATIVE_FLASH_CLASS;
 
     prevValue.current = value;
-    element.classList.remove(
-      "animate-[flash-positive_600ms_ease-out]",
-      "animate-[flash-negative_600ms_ease-out]"
-    );
+    element.classList.remove(POSITIVE_FLASH_CLASS, NEGATIVE_FLASH_CLASS);
     void element.offsetWidth;
     element.classList.add(flashClass);
 
@@ -46,7 +53,7 @@ export function AnimatedNumber({
     }, 600);
 
     return () => window.clearTimeout(timer);
-  }, [value]);
+  }, [animate, value]);
 
   return (
     <span
