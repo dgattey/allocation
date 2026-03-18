@@ -131,7 +131,7 @@ export function TreeMap({
     return (
       <div
         className={cn(
-          "w-full rounded-xl bg-surface border border-border flex items-center justify-center text-text-muted",
+          "w-full flex items-center justify-center text-text-muted",
           isMobile ? "h-[280px]" : "h-[400px]"
         )}
       >
@@ -163,7 +163,7 @@ export function TreeMap({
       <div
         ref={containerRef}
         className={cn(
-          "relative w-full overflow-hidden rounded-2xl bg-surface border border-border/60 shadow-[var(--shadow-md)] cursor-default touch-manipulation",
+          "relative w-full overflow-hidden cursor-default touch-manipulation",
           enableIntroAnimation && "animate-soft-rise"
         )}
         style={
@@ -190,7 +190,7 @@ export function TreeMap({
             <div
               key={`group-${node.id}`}
               className={cn(
-                "absolute rounded-lg",
+                "absolute",
                 enableIntroAnimation && "animate-soft-pop",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 grouping === "fund" && "cursor-pointer"
@@ -201,8 +201,6 @@ export function TreeMap({
                 top: pos.top,
                 width: pos.width,
                 height: pos.height,
-                backgroundColor: `${node.color}15`,
-                border: `1px solid ${node.color}30`,
                 opacity: visible ? 1 : 0,
                 pointerEvents: visible ? "auto" : "none",
               } as CSSProperties}
@@ -255,13 +253,13 @@ export function TreeMap({
             <div
               key={node.id}
               className={cn(
-                "absolute rounded-lg flex flex-col items-center justify-center",
+                "absolute flex flex-col items-center justify-center",
                 enableIntroAnimation && "animate-tile-in",
                 "select-none overflow-hidden",
                 "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
                 grouping === "fund" ? "cursor-pointer" : "cursor-default",
                 visible &&
-                  "hover:z-20 hover:brightness-110 hover:shadow-[var(--shadow-lg)] hover-lift"
+                  "hover:z-20 hover:brightness-110 hover-lift"
               )}
               style={{
                 "--enter-delay": `${160 + Math.min(index, 10) * 18}ms`,
@@ -273,10 +271,6 @@ export function TreeMap({
                 opacity: visible ? 1 : 0,
                 transform: visible ? "scale(1)" : "scale(0.85)",
                 pointerEvents: visible ? "auto" : "none",
-                boxShadow: visible
-                  ? "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.06)"
-                  : "none",
-                border: visible ? "1px solid rgba(255,255,255,0.08)" : "none",
               } as CSSProperties}
               onMouseEnter={() => visible && setHoveredNode(node)}
               onMouseLeave={() => setHoveredNode(null)}
