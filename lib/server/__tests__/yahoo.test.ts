@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockQuote = vi.fn();
 const mockQuoteSummary = vi.fn();
 const mockSearch = vi.fn();
-const mockFetchDirectFundHoldings = vi.fn();
 
 vi.mock("yahoo-finance2", () => {
   class MockYahooFinance {
@@ -16,10 +15,6 @@ vi.mock("yahoo-finance2", () => {
     default: MockYahooFinance,
   };
 });
-
-vi.mock("../holdings", () => ({
-  fetchDirectFundHoldings: mockFetchDirectFundHoldings,
-}));
 
 describe("shouldSkipYahooSymbol", () => {
   it("keeps exchange-qualified numeric symbols fetchable", async () => {
@@ -51,16 +46,6 @@ describe("yahoo fund symbol lookups", () => {
     mockQuote.mockReset();
     mockQuoteSummary.mockReset();
     mockSearch.mockReset();
-    mockFetchDirectFundHoldings.mockReset();
-    mockFetchDirectFundHoldings.mockImplementation(
-      async ({
-        symbol,
-        fetchYahooHoldings,
-      }: {
-        symbol: string;
-        fetchYahooHoldings: (lookupSymbol: string) => Promise<unknown>;
-      }) => fetchYahooHoldings(symbol)
-    );
   });
 
   it("automatically resolves a public proxy share class from description", async () => {
@@ -197,15 +182,6 @@ describe("yahoo fund symbol lookups", () => {
   });
 
   it("uses Yahoo top holdings for direct fund lookups", async () => {
-    mockFetchDirectFundHoldings.mockImplementation(
-      async ({
-        symbol,
-        fetchYahooHoldings,
-      }: {
-        symbol: string;
-        fetchYahooHoldings: (lookupSymbol: string) => Promise<unknown>;
-      }) => fetchYahooHoldings(symbol)
-    );
     mockQuoteSummary.mockResolvedValueOnce({
       topHoldings: {
         holdings: [
@@ -221,11 +197,6 @@ describe("yahoo fund symbol lookups", () => {
     const { fetchAllHoldings } = await import("../yahoo");
     const result = await fetchAllHoldings([{ symbol: "LIVKX" }]);
 
-    expect(mockFetchDirectFundHoldings).toHaveBeenCalledWith(
-      expect.objectContaining({
-        symbol: "LIVKX",
-      })
-    );
     expect(mockQuoteSummary).toHaveBeenCalledWith("LIVKX", {
       modules: ["topHoldings"],
     });
@@ -256,34 +227,26 @@ describe("yahoo fund symbol lookups", () => {
           },
         ],
       });
-    mockFetchDirectFundHoldings.mockImplementation(
-      async ({ symbol }: { symbol: string }) => {
-        if (symbol === "LIVKX") {
-          return [
-            {
-              symbol: "46434V373",
-              holdingName: "iShares Core MSCI Total Intl Stk ETF",
-              holdingPercent: 0.55,
-            },
-          ];
-        }
-
-        return [];
-      }
-    );
+    mockQuoteSummary.mockResolvedValueOnce({
+      topHoldings: {
+        holdings: [
+          {
+            symbol: "46434V373",
+            holdingName: "iShares Core MSCI Total Intl Stk ETF",
+            holdingPercent: 0.55,
+          },
+        ],
+      },
+    });
 
     const { fetchAllHoldings } = await import("../yahoo");
     const result = await fetchAllHoldings([
       { symbol: "09261F572", description: "BTC LPATH IDX 2055 M" },
     ]);
 
-    expect(mockFetchDirectFundHoldings).toHaveBeenCalledWith(
-      expect.objectContaining({
-        symbol: "LIVKX",
-        description: "BTC LPATH IDX 2055 M",
-      })
-    );
-    expect(mockQuoteSummary).not.toHaveBeenCalled();
+    expect(mockQuoteSummary).toHaveBeenCalledWith("LIVKX", {
+      modules: ["topHoldings"],
+    });
     expect(result["09261F572"]).toHaveLength(2);
     expect(result["09261F572"][0]).toMatchObject({
       symbol: "46434V373",

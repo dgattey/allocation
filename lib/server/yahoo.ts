@@ -2,7 +2,6 @@ import type { QuoteData, FundHolding } from "../types";
 
 import { cacheLife } from "next/cache";
 import YahooFinance from "yahoo-finance2";
-import { fetchDirectFundHoldings } from "./holdings";
 
 // Singleton instance
 let yahooFinanceInstance: InstanceType<typeof YahooFinance> | null = null;
@@ -279,11 +278,7 @@ async function fetchDirectHoldingsForSymbolUncached(
     }
 
     try {
-      const holdings = await fetchDirectFundHoldings({
-        symbol: candidateSymbol,
-        description,
-        fetchYahooHoldings: fetchYahooDirectHoldingsForSymbol,
-      });
+      const holdings = await fetchYahooDirectHoldingsForSymbol(candidateSymbol);
 
       if (holdings.length > 0) {
         return holdings;
