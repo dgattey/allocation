@@ -8,12 +8,20 @@ import type {
   SortConfig,
   TableRow,
   TreeMapNode,
+  TreeMapGrouping,
   ViewMode,
 } from "@/lib/types";
 import { parseCSV } from "@/lib/parseCSV";
 import { savePortfolio, loadPortfolio, clearPortfolio } from "@/lib/storage";
+import {
+  buildFlatHoldingTreeMapNodes,
+  filterFundTreeMapNodes,
+  getFundOptions,
+} from "@/lib/treemap";
 
 const POLL_INTERVAL = 5000;
+const TREE_MAP_WIDTH = 1200;
+const TREE_MAP_HEIGHT = 400;
 
 export function usePortfolio() {
   const [positions, setPositions] = useState<FidelityPosition[] | null>(null);
@@ -32,7 +40,9 @@ export function usePortfolio() {
   });
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("holdings");
-  const [focusedFund, setFocusedFund] = useState<string | null>(null);
+  const [treeMapGrouping, setTreeMapGrouping] =
+    useState<TreeMapGrouping>("fund");
+  const [selectedFunds, setSelectedFunds] = useState<string[]>([]);
 
   const mountedRef = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -46,7 +56,11 @@ export function usePortfolio() {
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ positions: pos, width: 1200, height: 400 }),
+          body: JSON.stringify({
+            positions: pos,
+            width: TREE_MAP_WIDTH,
+            height: TREE_MAP_HEIGHT,
+          }),
         });
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
@@ -114,22 +128,44 @@ export function usePortfolio() {
       ? portfolioData?.tableRows
       : portfolioData?.positionRows;
 
-  const filteredRows = getFilteredRows(
-    sourceRows ?? null,
-    filters,
-    sortConfig,
-    focusedFund
-  );
-  const filteredTreeMapNodes = getFilteredTreeMapNodes(
+  const filteredFundTreeMapNodes = getFilteredTreeMapNodes(
     portfolioData,
     positions,
     filters
   );
+  const fundOptions = getFundOptions(filteredFundTreeMapNodes);
 
-  // Compute focused fund summary for the header
-  const focusedSummary = getFocusedSummary(
+  useEffect(() => {
+    const availableFunds = new Set(fundOptions.map((fund) => fund.symbol));
+
+    setSelectedFunds((prev) => {
+      const next = prev.filter((symbol) => availableFunds.has(symbol));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [fundOptions]);
+
+  const filteredRows = getFilteredRows(
+    sourceRows ?? null,
+    filters,
+    sortConfig,
+    selectedFunds
+  );
+  const filteredTreeMapNodes =
+    treeMapGrouping === "fund"
+      ? filterFundTreeMapNodes(filteredFundTreeMapNodes, selectedFunds)
+      : buildFlatHoldingTreeMapNodes({
+          rows: portfolioData?.tableRows ?? [],
+          filters,
+          selectedFunds,
+          totalPortfolioValue: portfolioData?.summary.totalValue ?? 0,
+          width: TREE_MAP_WIDTH,
+          height: TREE_MAP_HEIGHT,
+        });
+
+  // Compute selected fund summary for the header
+  const selectedFundsSummary = getSelectedFundsSummary(
     portfolioData,
-    focusedFund
+    selectedFunds
   );
 
   async function uploadFile(file: File) {
@@ -157,6 +193,8 @@ export function usePortfolio() {
     setError(null);
     setExpandedRows(new Set());
     setFilters({ investmentTypes: [], accounts: [] });
+    setSelectedFunds([]);
+    setTreeMapGrouping("fund");
     mountedRef.current = false;
     if (pollRef.current) clearInterval(pollRef.current);
   }
@@ -181,6 +219,18 @@ export function usePortfolio() {
     }));
   }
 
+  function toggleFundSelection(symbol: string) {
+    setSelectedFunds((prev) =>
+      prev.includes(symbol)
+        ? prev.filter((selected) => selected !== symbol)
+        : [...prev, symbol]
+    );
+  }
+
+  function clearSelectedFunds() {
+    setSelectedFunds([]);
+  }
+
   return {
     hasData: positions !== null,
     isLoading,
@@ -198,9 +248,13 @@ export function usePortfolio() {
     clearData,
     viewMode,
     setViewMode,
-    focusedFund,
-    setFocusedFund,
-    focusedSummary,
+    treeMapGrouping,
+    setTreeMapGrouping,
+    selectedFunds,
+    toggleFundSelection,
+    clearSelectedFunds,
+    fundOptions,
+    selectedFundsSummary,
   };
 }
 
@@ -210,7 +264,7 @@ function getFilteredRows(
   rows: TableRow[] | null,
   filters: FilterState,
   sortConfig: SortConfig,
-  focusedFund: string | null
+  selectedFunds: string[]
 ): TableRow[] {
   if (!rows) return [];
   let filtered = rows;
@@ -226,10 +280,10 @@ function getFilteredRows(
     );
   }
 
-  // Focus filter: only show rows that have a source from the focused fund
-  if (focusedFund) {
+  if (selectedFunds.length > 0) {
     filtered = filtered.filter((r) =>
-      r.sources.some((s) => s.sourceSymbol === focusedFund)
+      selectedFunds.includes(r.symbol) ||
+      r.sources.some((s) => selectedFunds.includes(s.sourceSymbol))
     );
   }
 
@@ -251,25 +305,52 @@ function getFilteredRows(
   return sorted;
 }
 
-function getFocusedSummary(
+function getSelectedFundsSummary(
   portfolioData: PortfolioData | null,
-  focusedFund: string | null
-): { value: number; gainLoss: number; gainLossPercent: number; name: string; color: string } | null {
-  if (!portfolioData || !focusedFund) return null;
+  selectedFunds: string[]
+): {
+  value: number;
+  gainLoss: number;
+  gainLossPercent: number;
+  label: string;
+} | null {
+  if (!portfolioData || selectedFunds.length === 0) return null;
 
-  // Find the fund's depth-1 node in the treemap
-  const fundNode = portfolioData.treeMapNodes.find(
-    (n) => n.depth === 1 && n.symbol === focusedFund
+  const fundNodes = portfolioData.treeMapNodes.filter(
+    (node) => node.depth === 1 && selectedFunds.includes(node.symbol)
   );
-  if (!fundNode) return null;
+
+  if (fundNodes.length === 0) return null;
+
+  const value = fundNodes.reduce((sum, node) => sum + node.value, 0);
+  const gainLoss = fundNodes.reduce(
+    (sum, node) => sum + (node.totalGainLossDollar ?? 0),
+    0
+  );
+  const estimatedCostBasis = fundNodes.reduce(
+    (sum, node) => sum + estimateCostBasis(node),
+    0
+  );
 
   return {
-    value: fundNode.value,
-    gainLoss: fundNode.totalGainLossDollar ?? 0,
-    gainLossPercent: fundNode.totalGainLossPercent ?? 0,
-    name: fundNode.name,
-    color: fundNode.color,
+    value,
+    gainLoss,
+    gainLossPercent:
+      estimatedCostBasis > 0 ? (gainLoss / estimatedCostBasis) * 100 : 0,
+    label: fundNodes.length === 1 ? fundNodes[0].name : `${fundNodes.length} funds selected`,
   };
+}
+
+function estimateCostBasis(node: TreeMapNode): number {
+  const gainLoss = node.totalGainLossDollar ?? 0;
+  const gainLossPercent = node.totalGainLossPercent ?? 0;
+
+  if (gainLossPercent === 0) {
+    return Math.max(node.value - gainLoss, 0);
+  }
+
+  const estimated = gainLoss / (gainLossPercent / 100);
+  return Number.isFinite(estimated) ? Math.abs(estimated) : 0;
 }
 
 function getFilteredTreeMapNodes(

@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import type {
+  FundOption,
   PortfolioData,
   TreeMapNode,
   TableRow,
   FilterState,
   SortConfig,
+  TreeMapGrouping,
   ViewMode,
 } from "@/lib/types";
 import { formatDollar } from "@/lib/utils";
@@ -31,14 +33,17 @@ interface DashboardProps {
   isLoading: boolean;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
-  focusedFund: string | null;
-  onFocusFund: (symbol: string | null) => void;
-  focusedSummary: {
+  treeMapGrouping: TreeMapGrouping;
+  onTreeMapGroupingChange: (mode: TreeMapGrouping) => void;
+  selectedFunds: string[];
+  onToggleFund: (symbol: string) => void;
+  onClearFunds: () => void;
+  fundOptions: FundOption[];
+  selectedFundsSummary: {
     value: number;
     gainLoss: number;
     gainLossPercent: number;
-    name: string;
-    color: string;
+    label: string;
   } | null;
 }
 
@@ -56,28 +61,25 @@ export function Dashboard({
   isLoading,
   viewMode,
   onViewModeChange,
-  focusedFund,
-  onFocusFund,
-  focusedSummary,
+  treeMapGrouping,
+  onTreeMapGroupingChange,
+  selectedFunds,
+  onToggleFund,
+  onClearFunds,
+  fundOptions,
+  selectedFundsSummary,
 }: DashboardProps) {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const { summary, lastUpdated } = portfolioData;
 
-  const displayValue = focusedSummary?.value ?? summary.totalValue;
-  const displayGainLoss = focusedSummary?.gainLoss ?? summary.totalGainLoss;
+  const displayValue = selectedFundsSummary?.value ?? summary.totalValue;
+  const displayGainLoss =
+    selectedFundsSummary?.gainLoss ?? summary.totalGainLoss;
   const displayGainLossPercent =
-    focusedSummary?.gainLossPercent ?? summary.totalGainLossPercent;
-  const headerLabel = focusedSummary
-    ? focusedSummary.name
+    selectedFundsSummary?.gainLossPercent ?? summary.totalGainLossPercent;
+  const headerLabel = selectedFundsSummary
+    ? selectedFundsSummary.label
     : "Portfolio Allocation";
-
-  const focusedFundInfo = focusedSummary
-    ? {
-        symbol: focusedFund!,
-        name: focusedSummary.name,
-        color: focusedSummary.color,
-      }
-    : null;
 
   return (
     <div className="min-h-screen pb-20 animate-fade-in">
@@ -146,7 +148,7 @@ export function Dashboard({
                 <h1
                   className={cn(
                     "text-sm font-medium transition-colors duration-300 truncate max-w-[500px]",
-                    focusedSummary ? "text-text-primary" : "text-text-muted"
+                    selectedFundsSummary ? "text-text-primary" : "text-text-muted"
                   )}
                 >
                   {showClearConfirm ? (
@@ -189,8 +191,10 @@ export function Dashboard({
           nodes={filteredTreeMapNodes}
           originalWidth={1200}
           originalHeight={400}
-          focusedFund={focusedFund}
-          onFocusFund={onFocusFund}
+          grouping={treeMapGrouping}
+          selectedFunds={selectedFunds}
+          onToggleFund={onToggleFund}
+          onClearFunds={onClearFunds}
         />
       </section>
 
@@ -213,8 +217,12 @@ export function Dashboard({
         lastUpdated={lastUpdated}
         viewMode={viewMode}
         onViewModeChange={onViewModeChange}
-        focusedFund={focusedFundInfo}
-        onClearFocus={() => onFocusFund(null)}
+        treeMapGrouping={treeMapGrouping}
+        onTreeMapGroupingChange={onTreeMapGroupingChange}
+        funds={fundOptions}
+        selectedFunds={selectedFunds}
+        onToggleFund={onToggleFund}
+        onClearFunds={onClearFunds}
       />
     </div>
   );
