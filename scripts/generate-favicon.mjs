@@ -16,16 +16,9 @@ import sharp from "sharp";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
 
-// App accent color from globals.css
-const SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#5B7BA8"/>
-  <text x="16" y="24" font-family="system-ui,Arial,sans-serif" font-size="20" font-weight="700" fill="white" text-anchor="middle">$</text>
-</svg>
-`;
-
 async function generate() {
-  const svgBuffer = Buffer.from(SVG);
+  // Single source of truth: read from icon.svg
+  const svgBuffer = fs.readFileSync(path.join(publicDir, "icon.svg"));
 
   // favicon.ico (32x32, with 16x16 for legacy)
   const png32 = await sharp(svgBuffer).resize(32, 32).png().toBuffer();

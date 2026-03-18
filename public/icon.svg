@@ -1,4 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#5B7BA8"/>
-  <text x="16" y="24" font-family="system-ui,Arial,sans-serif" font-size="20" font-weight="700" fill="white" text-anchor="middle">$</text>
+  <!-- Treemap allocator: 4 blocks, squarified layout. Colors from lib/server/colors.ts (warm-sand, sage, muted-teal, dusty-rose) -->
+  <rect width="32" height="32" fill="#fafafa"/>
+  <rect x="1" y="1" width="16" height="16" rx="2" fill="#C49A5C"/>
+  <rect x="17" y="1" width="14" height="16" rx="2" fill="#5E9E74"/>
+  <rect x="1" y="17" width="16" height="14" rx="2" fill="#4E9999"/>
+  <rect x="17" y="17" width="14" height="14" rx="2" fill="#B86B6B"/>
 </svg>
