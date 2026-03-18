@@ -81,53 +81,55 @@ export function FloatingToolbar({
           "bg-[#1a1d28]/92 backdrop-blur-2xl saturate-150",
           "border border-white/[0.06] shadow-[0_8px_40px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)]",
           "ring-1 ring-inset ring-white/[0.04]",
-          "w-[min(92vw,820px)]"
+          "w-fit max-w-[92vw]"
         )}
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <ToolbarSection label="View">
-            <SegmentButton
-              active={viewMode === "holdings"}
-              onClick={() => onViewModeChange("holdings")}
-            >
-              Holdings
-            </SegmentButton>
-            <SegmentButton
-              active={viewMode === "positions"}
-              onClick={() => onViewModeChange("positions")}
-            >
-              Positions
-            </SegmentButton>
-          </ToolbarSection>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <ToolbarSection label="View">
+              <SegmentButton
+                active={viewMode === "holdings"}
+                onClick={() => onViewModeChange("holdings")}
+              >
+                Holdings
+              </SegmentButton>
+              <SegmentButton
+                active={viewMode === "positions"}
+                onClick={() => onViewModeChange("positions")}
+              >
+                Positions
+              </SegmentButton>
+            </ToolbarSection>
 
-          <ToolbarSection label="Treemap">
-            <SegmentButton
-              active={treeMapGrouping === "fund"}
-              onClick={() => onTreeMapGroupingChange("fund")}
-            >
-              By fund
-            </SegmentButton>
-            <SegmentButton
-              active={treeMapGrouping === "holding"}
-              onClick={() => onTreeMapGroupingChange("holding")}
-            >
-              Flat
-            </SegmentButton>
-          </ToolbarSection>
+            <ToolbarSection label="Treemap">
+              <SegmentButton
+                active={treeMapGrouping === "fund"}
+                onClick={() => onTreeMapGroupingChange("fund")}
+              >
+                By fund
+              </SegmentButton>
+              <SegmentButton
+                active={treeMapGrouping === "holding"}
+                onClick={() => onTreeMapGroupingChange("holding")}
+              >
+                Flat
+              </SegmentButton>
+            </ToolbarSection>
 
-          <button
-            onClick={() => setShowFilters((open) => !open)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
-              showFilters || hasFilters
-                ? "bg-white/12 text-white border-white/0 shadow-sm"
-                : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
-            )}
-          >
-            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-          </button>
+            <button
+              onClick={() => setShowFilters((open) => !open)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors border cursor-pointer whitespace-nowrap",
+                showFilters || hasFilters
+                  ? "bg-white/12 text-white border-white/0 shadow-sm"
+                  : "bg-white/5 text-white/65 border-white/10 hover:text-white hover:bg-white/10"
+              )}
+            >
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </button>
+          </div>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {hasFilters && (
               <button
                 onClick={clearAllFilters}

@@ -85,9 +85,9 @@ export function Dashboard({
   return (
     <div className="min-h-screen pb-20 animate-fade-in">
       {/* Sticky Header */}
-      <header className="sticky-header sticky top-0 z-30 px-6 py-5">
-        <div className="max-w-[1400px] mx-auto">
-          <div className="flex items-end justify-between gap-4">
+      <header className="sticky-header sticky top-0 z-30">
+        <div className="max-w-[1400px] mx-auto px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
             <div className="group/header">
               {/* Title row with hover-reveal back button */}
               <div className="flex items-center gap-2 mb-1">
