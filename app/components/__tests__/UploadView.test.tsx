@@ -34,11 +34,9 @@ describe("UploadView", () => {
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
-    expect(screen.getByText("...")).toBeInTheDocument();
-    expect(
-      screen.getByText(/then click/i)
-    ).toHaveTextContent(
-      "Open the ... menu on the right, then click Download to export your positions as CSV"
+    expect(screen.getByLabelText("More actions menu")).toBeInTheDocument();
+    expect(screen.getByText(/menu on the right/i)).toHaveTextContent(
+      "Open the menu on the right, then click Download to export your positions as CSV"
     );
   });
 

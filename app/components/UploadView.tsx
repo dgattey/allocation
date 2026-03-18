@@ -99,7 +99,7 @@ export function UploadView({ onFileSelect, error, isLoading }: UploadViewProps) 
               </a>
             </Step>
             <Step number={2}>
-              Open the <strong>...</strong> menu on the right, then click{" "}
+              Open the <OverflowMenuIcon /> menu on the right, then click{" "}
               <strong>Download</strong> to export your positions as CSV
             </Step>
             <Step number={3}>Drop the file below or click to browse</Step>
@@ -193,6 +193,28 @@ function UploadIcon() {
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
     </svg>
+  );
+}
+
+function OverflowMenuIcon() {
+  return (
+    <span
+      aria-label="More actions menu"
+      className="mx-0.5 inline-flex h-4 w-4 align-[-0.125em] items-center justify-center rounded-sm border border-border/70 bg-surface"
+    >
+      <svg
+        width="6"
+        height="12"
+        viewBox="0 0 6 12"
+        fill="none"
+        aria-hidden="true"
+        className="text-text-primary"
+      >
+        <circle cx="3" cy="2" r="1" fill="currentColor" />
+        <circle cx="3" cy="6" r="1" fill="currentColor" />
+        <circle cx="3" cy="10" r="1" fill="currentColor" />
+      </svg>
+    </span>
   );
 }
 
