@@ -54,7 +54,7 @@ export function PortfolioDetailClient({
     const nextPortfolioId = removePortfolioById(portfolioToRemoveId);
 
     if (portfolioToRemoveId === portfolioId) {
-      router.push(nextPortfolioId ? `/portfolio/${nextPortfolioId}` : "/upload");
+      router.push(nextPortfolioId ? `/portfolio/${nextPortfolioId}` : "/");
     }
   }
 

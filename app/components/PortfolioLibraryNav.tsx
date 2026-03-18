@@ -33,7 +33,7 @@ export function PortfolioLibraryNav({
           </p>
         </div>
         <Link
-          href="/upload"
+          href="/"
           className="inline-flex min-h-10 items-center rounded-full border border-border px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-hover"
         >
           Upload more files
