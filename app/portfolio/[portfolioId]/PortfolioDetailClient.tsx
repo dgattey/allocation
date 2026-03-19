@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
 import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { usePortfolioUrlSync } from "@/hooks/usePortfolioUrlSync";
 import { usePortfolioViewState } from "@/hooks/usePortfolioViewState";
 import { useStoredPortfolioRecord } from "@/hooks/useStoredPortfolioRecord";
 import {
@@ -13,13 +14,7 @@ import {
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
 import { updateStoredPortfolioName } from "@/lib/storage";
-import {
-  arePortfolioUrlStatesEqual,
-  buildPortfolioSearchParams,
-  normalizePortfolioUrlState,
-  parsePortfolioUrlState,
-  type PortfolioUrlState,
-} from "@/lib/urlFilters";
+import { parsePortfolioUrlState } from "@/lib/urlFilters";
 
 interface PortfolioDetailClientProps {
   portfolioId: string;
@@ -53,122 +48,20 @@ export function PortfolioDetailClient({
     isMobile,
     initialUrlState,
   });
-  const lastAppliedPortfolioUrlRef = useRef<PortfolioUrlState | null>(null);
-  const syncWithUrlStateRef = useRef(viewState.syncWithUrlState);
-  const skipNextUrlWriteRef = useRef(false);
-  const portfolioSliceRef = useRef({
-    filters: viewState.filters,
-    selectedFunds: viewState.selectedFunds,
-    sortConfig: viewState.sortConfig,
-    viewMode: viewState.viewMode,
-    treeMapGrouping: viewState.treeMapGrouping,
-  });
-  const searchParamsRef = useRef(searchParamsString);
-  const pathnameRef = useRef(pathname);
-  const urlWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const URL_WRITE_DEBOUNCE_MS = 350;
-
-  useLayoutEffect(() => {
-    syncWithUrlStateRef.current = viewState.syncWithUrlState;
-    portfolioSliceRef.current = {
+  usePortfolioUrlSync({
+    searchParamsString,
+    pathname,
+    router,
+    portfolioSlice: {
       filters: viewState.filters,
       selectedFunds: viewState.selectedFunds,
       sortConfig: viewState.sortConfig,
       viewMode: viewState.viewMode,
       treeMapGrouping: viewState.treeMapGrouping,
-    };
-    searchParamsRef.current = searchParamsString;
-    pathnameRef.current = pathname;
+    },
+    syncWithUrlState: viewState.syncWithUrlState,
   });
-
-  useEffect(() => {
-    const fromUrl = parsePortfolioUrlState(new URLSearchParams(searchParamsString));
-    if (
-      lastAppliedPortfolioUrlRef.current !== null &&
-      arePortfolioUrlStatesEqual(fromUrl, lastAppliedPortfolioUrlRef.current)
-    ) {
-      return;
-    }
-
-    lastAppliedPortfolioUrlRef.current = fromUrl;
-    skipNextUrlWriteRef.current = true;
-    syncWithUrlStateRef.current(fromUrl);
-  }, [searchParamsString]);
-
-  useEffect(() => {
-    if (skipNextUrlWriteRef.current) {
-      skipNextUrlWriteRef.current = false;
-      return;
-    }
-
-    const slice = portfolioSliceRef.current;
-    const desired = normalizePortfolioUrlState({
-      filters: slice.filters,
-      selectedFunds: slice.selectedFunds,
-      sortConfig: slice.sortConfig,
-      viewMode: slice.viewMode,
-      treeMapGrouping: slice.treeMapGrouping,
-    });
-    const fromUrl = parsePortfolioUrlState(new URLSearchParams(searchParamsRef.current));
-    if (arePortfolioUrlStatesEqual(fromUrl, desired)) {
-      if (urlWriteTimerRef.current) {
-        clearTimeout(urlWriteTimerRef.current);
-        urlWriteTimerRef.current = null;
-      }
-      return;
-    }
-
-    if (urlWriteTimerRef.current) {
-      clearTimeout(urlWriteTimerRef.current);
-    }
-
-    urlWriteTimerRef.current = setTimeout(() => {
-      urlWriteTimerRef.current = null;
-      const latest = portfolioSliceRef.current;
-      const latestDesired = normalizePortfolioUrlState({
-        filters: latest.filters,
-        selectedFunds: latest.selectedFunds,
-        sortConfig: latest.sortConfig,
-        viewMode: latest.viewMode,
-        treeMapGrouping: latest.treeMapGrouping,
-      });
-      const latestFromUrl = parsePortfolioUrlState(
-        new URLSearchParams(searchParamsRef.current)
-      );
-      if (arePortfolioUrlStatesEqual(latestFromUrl, latestDesired)) {
-        return;
-      }
-
-      const nextSearchParams = buildPortfolioSearchParams(
-        latestDesired,
-        new URLSearchParams(searchParamsRef.current)
-      );
-
-      router.replace(
-        nextSearchParams ? `${pathnameRef.current}?${nextSearchParams}` : pathnameRef.current,
-        {
-          scroll: false,
-        }
-      );
-    }, URL_WRITE_DEBOUNCE_MS);
-
-    return () => {
-      if (urlWriteTimerRef.current) {
-        clearTimeout(urlWriteTimerRef.current);
-        urlWriteTimerRef.current = null;
-      }
-    };
-  }, [
-    pathname,
-    router,
-    searchParamsString,
-    viewState.filters,
-    viewState.selectedFunds,
-    viewState.sortConfig,
-    viewState.treeMapGrouping,
-    viewState.viewMode,
-  ]);
 
   useEffect(() => {
     document.title = record.summary
