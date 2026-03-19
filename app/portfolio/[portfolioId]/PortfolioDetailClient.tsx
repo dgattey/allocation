@@ -56,9 +56,30 @@ export function PortfolioDetailClient({
   const lastAppliedPortfolioUrlRef = useRef<PortfolioUrlState | null>(null);
   const syncWithUrlStateRef = useRef(viewState.syncWithUrlState);
   const skipNextUrlWriteRef = useRef(false);
+  const portfolioSliceRef = useRef({
+    filters: viewState.filters,
+    selectedFunds: viewState.selectedFunds,
+    sortConfig: viewState.sortConfig,
+    viewMode: viewState.viewMode,
+    treeMapGrouping: viewState.treeMapGrouping,
+  });
+  const searchParamsRef = useRef(searchParamsString);
+  const pathnameRef = useRef(pathname);
+  const urlWriteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const URL_WRITE_DEBOUNCE_MS = 350;
 
   useLayoutEffect(() => {
     syncWithUrlStateRef.current = viewState.syncWithUrlState;
+    portfolioSliceRef.current = {
+      filters: viewState.filters,
+      selectedFunds: viewState.selectedFunds,
+      sortConfig: viewState.sortConfig,
+      viewMode: viewState.viewMode,
+      treeMapGrouping: viewState.treeMapGrouping,
+    };
+    searchParamsRef.current = searchParamsString;
+    pathnameRef.current = pathname;
   });
 
   useEffect(() => {
@@ -81,26 +102,63 @@ export function PortfolioDetailClient({
       return;
     }
 
+    const slice = portfolioSliceRef.current;
     const desired = normalizePortfolioUrlState({
-      filters: viewState.filters,
-      selectedFunds: viewState.selectedFunds,
-      sortConfig: viewState.sortConfig,
-      viewMode: viewState.viewMode,
-      treeMapGrouping: viewState.treeMapGrouping,
+      filters: slice.filters,
+      selectedFunds: slice.selectedFunds,
+      sortConfig: slice.sortConfig,
+      viewMode: slice.viewMode,
+      treeMapGrouping: slice.treeMapGrouping,
     });
-    const fromUrl = parsePortfolioUrlState(new URLSearchParams(searchParamsString));
+    const fromUrl = parsePortfolioUrlState(new URLSearchParams(searchParamsRef.current));
     if (arePortfolioUrlStatesEqual(fromUrl, desired)) {
+      if (urlWriteTimerRef.current) {
+        clearTimeout(urlWriteTimerRef.current);
+        urlWriteTimerRef.current = null;
+      }
       return;
     }
 
-    const nextSearchParams = buildPortfolioSearchParams(
-      desired,
-      new URLSearchParams(searchParamsString)
-    );
+    if (urlWriteTimerRef.current) {
+      clearTimeout(urlWriteTimerRef.current);
+    }
 
-    router.replace(nextSearchParams ? `${pathname}?${nextSearchParams}` : pathname, {
-      scroll: false,
-    });
+    urlWriteTimerRef.current = setTimeout(() => {
+      urlWriteTimerRef.current = null;
+      const latest = portfolioSliceRef.current;
+      const latestDesired = normalizePortfolioUrlState({
+        filters: latest.filters,
+        selectedFunds: latest.selectedFunds,
+        sortConfig: latest.sortConfig,
+        viewMode: latest.viewMode,
+        treeMapGrouping: latest.treeMapGrouping,
+      });
+      const latestFromUrl = parsePortfolioUrlState(
+        new URLSearchParams(searchParamsRef.current)
+      );
+      if (arePortfolioUrlStatesEqual(latestFromUrl, latestDesired)) {
+        return;
+      }
+
+      const nextSearchParams = buildPortfolioSearchParams(
+        latestDesired,
+        new URLSearchParams(searchParamsRef.current)
+      );
+
+      router.replace(
+        nextSearchParams ? `${pathnameRef.current}?${nextSearchParams}` : pathnameRef.current,
+        {
+          scroll: false,
+        }
+      );
+    }, URL_WRITE_DEBOUNCE_MS);
+
+    return () => {
+      if (urlWriteTimerRef.current) {
+        clearTimeout(urlWriteTimerRef.current);
+        urlWriteTimerRef.current = null;
+      }
+    };
   }, [
     pathname,
     router,
