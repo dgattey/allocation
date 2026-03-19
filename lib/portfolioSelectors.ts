@@ -138,12 +138,17 @@ function getActiveSummaryLabel(
   const hasFundFilter = selectedFunds.length > 0;
   const searchActive = hasSearchQuery(filters);
   const searchLabel = filters.searchQuery?.trim();
+  const activeFilterCount =
+    filters.accounts.length +
+    filters.investmentTypes.length +
+    selectedFunds.length +
+    (searchActive ? 1 : 0);
 
   if (searchActive && !hasAccountFilter && !hasTypeFilter && !hasFundFilter) {
     return searchLabel ? `Search: ${searchLabel}` : "Filtered portfolio";
   }
 
-  if (!hasAccountFilter && !hasTypeFilter && hasFundFilter) {
+  if (!hasAccountFilter && !hasTypeFilter && hasFundFilter && !searchActive) {
     if (selectedFunds.length === 1) {
       return (
         matchedPositions.find((position) => position.symbol === selectedFunds[0])
@@ -154,17 +159,19 @@ function getActiveSummaryLabel(
     return `${selectedFunds.length} funds selected`;
   }
 
-  if (hasAccountFilter && !hasTypeFilter && !hasFundFilter) {
+  if (hasAccountFilter && !hasTypeFilter && !hasFundFilter && !searchActive) {
     return filters.accounts[0];
   }
 
-  if (!hasAccountFilter && hasTypeFilter && !hasFundFilter) {
+  if (!hasAccountFilter && hasTypeFilter && !hasFundFilter && !searchActive) {
     return filters.investmentTypes.length === 1
       ? filters.investmentTypes[0]
       : `${filters.investmentTypes.length} types selected`;
   }
 
-  return "Filtered portfolio";
+  return `${activeFilterCount} ${
+    activeFilterCount === 1 ? "filter" : "filters"
+  } applied`;
 }
 
 function buildVisibleRow(

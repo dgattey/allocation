@@ -388,4 +388,40 @@ describe("portfolio selectors", () => {
       label: "Search: missing",
     });
   });
+
+  it("uses a filter count label for mixed active filters", () => {
+    const summary = getActivePortfolioSummary(
+      [makePosition()],
+      {
+        accounts: ["Account A"],
+        investmentTypes: ["ETFs"],
+        searchQuery: "market",
+      },
+      ["FUND-A"]
+    );
+
+    expect(summary).toMatchObject({
+      value: 100,
+      gainLoss: 10,
+      label: "4 filters applied",
+    });
+  });
+
+  it("uses a filter count label when search combines with a type filter", () => {
+    const summary = getActivePortfolioSummary(
+      [makePosition()],
+      {
+        accounts: [],
+        investmentTypes: ["ETFs"],
+        searchQuery: "market",
+      },
+      []
+    );
+
+    expect(summary).toMatchObject({
+      value: 100,
+      gainLoss: 10,
+      label: "2 filters applied",
+    });
+  });
 });
