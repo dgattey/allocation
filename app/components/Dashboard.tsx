@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import type {
   ActivePortfolioSummary,
@@ -27,6 +28,8 @@ import { cn } from "@/lib/utils";
 interface DashboardProps {
   portfolioData: PortfolioData;
   portfolioName: string;
+  portfolioId?: string;
+  onRenamePortfolio?: (portfolioId: string, name: string) => void;
   filteredTreeMapNodes: TreeMapNode[];
   filteredRows: TableRow[];
   isMobile: boolean;
@@ -60,6 +63,8 @@ interface DashboardProps {
 export function Dashboard({
   portfolioData,
   portfolioName,
+  portfolioId,
+  onRenamePortfolio,
   filteredTreeMapNodes,
   filteredRows,
   isMobile,
@@ -90,6 +95,42 @@ export function Dashboard({
   isRefreshing = false,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState(portfolioName);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setEditNameValue(portfolioName);
+  }, [portfolioName]);
+
+  useEffect(() => {
+    if (isEditingName) {
+      nameInputRef.current?.focus();
+      nameInputRef.current?.select();
+    }
+  }, [isEditingName]);
+
+  function handleStartEditName() {
+    setIsEditingName(true);
+    setEditNameValue(portfolioName);
+  }
+
+  function handleCommitNameEdit() {
+    const trimmed = editNameValue.trim();
+    if (trimmed && trimmed !== portfolioName && portfolioId && onRenamePortfolio) {
+      onRenamePortfolio(portfolioId, trimmed);
+    }
+    setIsEditingName(false);
+  }
+
+  function handleNameKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") {
+      handleCommitNameEdit();
+    } else if (e.key === "Escape") {
+      setEditNameValue(portfolioName);
+      setIsEditingName(false);
+    }
+  }
   const searchQuery = filters.searchQuery ?? "";
   const visibleHoldingCount =
     viewMode === "holdings"
@@ -175,9 +216,51 @@ export function Dashboard({
                 )}
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-text-muted">Your portfolio</div>
-                  <h1 className="truncate text-sm font-semibold text-text-primary md:text-base">
-                    {portfolioName}
-                  </h1>
+                  {isEditingName && portfolioId && onRenamePortfolio ? (
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      value={editNameValue}
+                      onChange={(e) => setEditNameValue(e.target.value)}
+                      onBlur={handleCommitNameEdit}
+                      onKeyDown={handleNameKeyDown}
+                      className="mt-0.5 block w-full rounded-lg border border-border bg-surface px-2 py-1 text-sm font-semibold text-text-primary outline-none focus:border-accent md:text-base"
+                      aria-label="Rename portfolio"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={portfolioId && onRenamePortfolio ? handleStartEditName : undefined}
+                      className={cn(
+                        "flex min-w-0 items-center gap-2 text-left",
+                        portfolioId && onRenamePortfolio && "cursor-pointer hover:opacity-80"
+                      )}
+                      disabled={!portfolioId || !onRenamePortfolio}
+                      aria-label={portfolioId && onRenamePortfolio ? "Rename portfolio" : undefined}
+                      title={portfolioId && onRenamePortfolio ? "Click to rename" : undefined}
+                    >
+                      <h1 className="truncate text-sm font-semibold text-text-primary md:text-base">
+                        {portfolioName}
+                      </h1>
+                      {portfolioId && onRenamePortfolio && (
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="shrink-0 text-text-muted opacity-70"
+                          aria-hidden="true"
+                        >
+                          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                          <path d="m15 5 4 4" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
                   {activeSummary && (
                     <p className="truncate text-xs text-text-muted">
                       {activeSummary.label}

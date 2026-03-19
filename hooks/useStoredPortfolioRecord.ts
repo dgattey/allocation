@@ -31,6 +31,7 @@ export interface StoredPortfolioRecordState {
   restoredFromStorage: boolean;
   isMissing: boolean;
   refreshData: () => Promise<void>;
+  refreshFromStorage: () => void;
 }
 
 export function useStoredPortfolioRecord({
@@ -204,6 +205,13 @@ export function useStoredPortfolioRecord({
     setIsRefreshing(false);
   }, [refreshPortfolioData]);
 
+  const refreshFromStorage = useCallback(() => {
+    const stored = loadStoredPortfolio(portfolioId);
+    if (stored) {
+      setSummary(stored.summary);
+    }
+  }, [portfolioId]);
+
   return {
     summary,
     positions,
@@ -214,6 +222,7 @@ export function useStoredPortfolioRecord({
     restoredFromStorage,
     isMissing,
     refreshData,
+    refreshFromStorage,
   };
 }
 
