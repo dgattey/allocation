@@ -406,4 +406,22 @@ describe("portfolio selectors", () => {
       label: "4 filters",
     });
   });
+
+  it("uses a filter count label when search combines with a type filter", () => {
+    const summary = getActivePortfolioSummary(
+      [makePosition()],
+      {
+        accounts: [],
+        investmentTypes: ["ETFs"],
+        searchQuery: "market",
+      },
+      []
+    );
+
+    expect(summary).toMatchObject({
+      value: 100,
+      gainLoss: 10,
+      label: "2 filters",
+    });
+  });
 });

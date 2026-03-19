@@ -148,7 +148,7 @@ function getActiveSummaryLabel(
     return searchLabel ? `Search: ${searchLabel}` : "Filtered portfolio";
   }
 
-  if (!hasAccountFilter && !hasTypeFilter && hasFundFilter) {
+  if (!hasAccountFilter && !hasTypeFilter && hasFundFilter && !searchActive) {
     if (selectedFunds.length === 1) {
       return (
         matchedPositions.find((position) => position.symbol === selectedFunds[0])
@@ -159,11 +159,11 @@ function getActiveSummaryLabel(
     return `${selectedFunds.length} funds selected`;
   }
 
-  if (hasAccountFilter && !hasTypeFilter && !hasFundFilter) {
+  if (hasAccountFilter && !hasTypeFilter && !hasFundFilter && !searchActive) {
     return filters.accounts[0];
   }
 
-  if (!hasAccountFilter && hasTypeFilter && !hasFundFilter) {
+  if (!hasAccountFilter && hasTypeFilter && !hasFundFilter && !searchActive) {
     return filters.investmentTypes.length === 1
       ? filters.investmentTypes[0]
       : `${filters.investmentTypes.length} types selected`;
