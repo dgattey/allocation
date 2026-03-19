@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { HomeHowItWorksSection } from "./components/HomeHowItWorksSection";
 import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
 import { UploadView } from "./components/UploadView";
 import { usePendingUpload } from "@/app/contexts/PendingUploadContext";
@@ -45,6 +46,8 @@ export default function Home() {
             Visualize your Fidelity portfolio allocations, live and in detail.
           </p>
         </section>
+
+        <HomeHowItWorksSection />
 
         {portfolios.length > 0 && (
           <section className="rounded-[30px] border border-border/70 bg-surface px-5 py-5 shadow-[var(--shadow-lg)] md:px-8 md:py-8">

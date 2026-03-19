@@ -14,7 +14,7 @@ describe("UploadView", () => {
   it("renders the title and instructions", () => {
     render(<UploadView onFilesSelect={vi.fn()} />);
     expect(screen.getByText("Import portfolio CSVs")).toBeInTheDocument();
-    expect(screen.getByText("Add Fidelity exports to the picker.")).toBeInTheDocument();
+    expect(screen.getByText("Add files")).toBeInTheDocument();
   });
 
   it("renders the streamlined upload section copy", () => {

@@ -36,9 +36,6 @@ export function PortfolioLibraryNav({
         <h2 className="mt-1 text-xl font-semibold text-text-primary md:text-2xl">
           Choose a portfolio to open
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
-          Open a saved file, rename it, or delete it.
-        </p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">

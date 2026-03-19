@@ -58,13 +58,6 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
             <h2 className="mt-1 text-2xl font-semibold text-text-primary">
               Import portfolio CSVs
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
-              Add Fidelity exports to the picker.
-            </p>
-            <p className="mt-3 max-w-2xl text-xs leading-5 text-text-muted">
-              Uploads stay on your device only. The only data fetched from the
-              internet is publicly available fund data, identified by symbol.
-            </p>
           </div>
 
           <div className="space-y-3">
