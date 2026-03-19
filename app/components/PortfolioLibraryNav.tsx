@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type CSSProperties } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { formatDollar, formatDate } from "@/lib/utils";
 import type { StoredPortfolioSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { navigateWithViewTransition } from "@/lib/viewTransitionNav";
+import {
+  portfolioViewTransitionShell,
+  portfolioViewTransitionTitle,
+  portfolioViewTransitionValue,
+} from "@/lib/portfolioViewTransition";
 
 interface PortfolioLibraryNavProps {
   portfolios: StoredPortfolioSummary[];
@@ -66,10 +69,25 @@ function PortfolioTile({
   onRemove,
   onRename,
 }: PortfolioTileProps) {
-  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(portfolio.name);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const vtShellStyle = !isEditing
+    ? ({
+        viewTransitionName: portfolioViewTransitionShell(portfolio.id),
+      } as CSSProperties)
+    : undefined;
+  const vtTitleStyle = !isEditing
+    ? ({
+        viewTransitionName: portfolioViewTransitionTitle(portfolio.id),
+      } as CSSProperties)
+    : undefined;
+  const vtValueStyle = !isEditing
+    ? ({
+        viewTransitionName: portfolioViewTransitionValue(portfolio.id),
+      } as CSSProperties)
+    : undefined;
 
   useEffect(() => {
     if (isEditing) {
@@ -108,23 +126,6 @@ function PortfolioTile({
     onRemove?.(portfolio.id);
   }
 
-  function handleOpenClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    if (
-      e.button !== 0 ||
-      e.metaKey ||
-      e.ctrlKey ||
-      e.shiftKey ||
-      e.altKey
-    ) {
-      return;
-    }
-    e.preventDefault();
-    const href = `/portfolio/${portfolio.id}`;
-    navigateWithViewTransition("forward", () => {
-      router.push(href);
-    });
-  }
-
   const cardContent = (
     <>
       <div className="flex items-start justify-between gap-3">
@@ -143,7 +144,10 @@ function PortfolioTile({
             />
           ) : (
             <div className="flex items-center gap-2 min-w-0">
-              <p className="truncate text-sm font-semibold text-text-primary">
+              <p
+                className="truncate text-sm font-semibold text-text-primary"
+                style={vtTitleStyle}
+              >
                 {portfolio.name}
               </p>
               {onRename && (
@@ -184,7 +188,7 @@ function PortfolioTile({
 
       <div className="mt-4 flex items-center justify-between gap-2 text-xs text-text-muted">
         <span>{portfolio.positionCount} positions</span>
-        <span>
+        <span style={vtValueStyle}>
           {typeof portfolio.totalValue === "number"
             ? formatDollar(portfolio.totalValue)
             : "Needs refresh"}
@@ -201,13 +205,13 @@ function PortfolioTile({
           ? "border-accent bg-accent-bg/60"
           : "border-border/70 bg-bg/70 hover:border-accent/40 hover:bg-surface-hover/60"
       )}
+      style={vtShellStyle}
     >
       {isEditing ? (
         <div className="block min-h-full">{cardContent}</div>
       ) : (
         <Link
           href={`/portfolio/${portfolio.id}`}
-          onClick={handleOpenClick}
           className="block min-h-full cursor-pointer after:absolute after:inset-0 after:content-['']"
           aria-label={`Open ${portfolio.name}`}
         >

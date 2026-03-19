@@ -24,6 +24,11 @@ import { FloatingToolbar } from "./FloatingToolbar";
 import { FetchStatusBadge } from "./primitives/FetchStatusBadge";
 import { cn } from "@/lib/utils";
 import { useIsStickyDocked } from "@/hooks/useIsStickyDocked";
+import {
+  portfolioViewTransitionShell,
+  portfolioViewTransitionTitle,
+  portfolioViewTransitionValue,
+} from "@/lib/portfolioViewTransition";
 
 interface DashboardProps {
   portfolioData: PortfolioData;
@@ -58,6 +63,8 @@ interface DashboardProps {
   fetchError?: string | null;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  /** Enables shared view-transition-name targets when opening from / back to the library tile */
+  viewTransitionPortfolioId?: string;
 }
 
 export function Dashboard({
@@ -93,6 +100,7 @@ export function Dashboard({
   fetchError,
   onRefresh,
   isRefreshing = false,
+  viewTransitionPortfolioId,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
   const searchQueryFromFilters = filters.searchQuery ?? "";
@@ -203,6 +211,13 @@ export function Dashboard({
     onFiltersChange({ ...filtersRef.current, searchQuery: "" });
   }, [onFiltersChange]);
 
+  const vtShellStyle =
+    viewTransitionPortfolioId !== undefined
+      ? ({
+          viewTransitionName: portfolioViewTransitionShell(viewTransitionPortfolioId),
+        } as CSSProperties)
+      : undefined;
+
   return (
     <div
       className={cn(
@@ -210,6 +225,7 @@ export function Dashboard({
         enableIntroAnimation && "animate-fade-in",
         isMobile ? "pb-8" : "pb-8"
       )}
+      style={vtShellStyle}
     >
       {/* Sticky Header — consistent background, never changes when search bar docks */}
       <header
@@ -306,7 +322,17 @@ export function Dashboard({
                       aria-label={portfolioId && onRenamePortfolio ? "Rename portfolio" : undefined}
                       title={portfolioId && onRenamePortfolio ? "Click to rename" : undefined}
                     >
-                      <h1 className="truncate text-sm font-semibold text-text-primary md:text-base">
+                      <h1
+                        className="truncate text-sm font-semibold text-text-primary md:text-base"
+                        style={
+                          viewTransitionPortfolioId
+                            ? ({
+                                viewTransitionName:
+                                  portfolioViewTransitionTitle(viewTransitionPortfolioId),
+                              } as CSSProperties)
+                            : undefined
+                        }
+                      >
                         {portfolioName}
                       </h1>
                       {portfolioId && onRenamePortfolio && (
@@ -403,6 +429,14 @@ export function Dashboard({
                 className="relative min-w-fit shrink-0"
                 onMouseEnter={() => setHoveredTooltip("value")}
                 onMouseLeave={() => setHoveredTooltip(null)}
+                style={
+                  viewTransitionPortfolioId
+                    ? ({
+                        viewTransitionName:
+                          portfolioViewTransitionValue(viewTransitionPortfolioId),
+                      } as CSSProperties)
+                    : undefined
+                }
               >
                 <AnimatedNumber
                   value={displayValue}

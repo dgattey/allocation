@@ -133,13 +133,7 @@ export function useStoredPortfolioRecord({
     }
 
     requestTokenRef.current += 1;
-    setIsLoading(true);
     setError(null);
-    setIsMissing(false);
-    setRestoredFromStorage(false);
-    setSummary(null);
-    setPositions(null);
-    setPortfolioData(null);
 
     const storedPortfolio = loadStoredPortfolio(portfolioId);
     if (!storedPortfolio) {
@@ -148,11 +142,13 @@ export function useStoredPortfolioRecord({
       setPortfolioData(null);
       setIsMissing(true);
       setIsLoading(false);
+      setRestoredFromStorage(false);
       return;
     }
 
     resetInitialScrollPosition();
     touchStoredPortfolio(portfolioId);
+    setIsMissing(false);
     setSummary(storedPortfolio.summary);
     setPositions(storedPortfolio.positions);
     setPortfolioData(storedPortfolio.portfolioData);
@@ -164,6 +160,7 @@ export function useStoredPortfolioRecord({
       return;
     }
 
+    setIsLoading(true);
     void refreshPortfolioData(storedPortfolio.positions, "/api/portfolio", true);
   }, [portfolioId, refreshPortfolioData]);
 
