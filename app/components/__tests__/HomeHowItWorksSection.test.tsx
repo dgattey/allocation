@@ -1,16 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { HomeHowItWorksSection } from "../HomeHowItWorksSection";
 
 describe("HomeHowItWorksSection", () => {
-  it("explains the app, data flow, and privacy", () => {
+  it("shows a compact disclosure with privacy and data-flow basics", () => {
     render(<HomeHowItWorksSection />);
-    expect(
-      screen.getByRole("heading", { name: /how does it work/i })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Fidelity positions CSV/i)).toBeInTheDocument();
-    expect(screen.getByText(/treemap/i)).toBeInTheDocument();
-    expect(screen.getByText(/Privacy:/i)).toBeInTheDocument();
-    expect(screen.getByText(/in this browser/i)).toBeInTheDocument();
+    const summary = screen.getByText("How does it work?");
+    expect(summary).toBeInTheDocument();
+
+    const details = summary.closest("details");
+    expect(details).toBeTruthy();
+    expect(details).toHaveProperty("open", false);
+
+    fireEvent.click(summary);
+    expect(details).toHaveProperty("open", true);
+
+    expect(screen.getByText(/treemap/i)).toBeVisible();
+    expect(screen.getByText(/no brokerage login/i)).toBeVisible();
+    expect(screen.getByText(/this browser/i)).toBeVisible();
   });
 });

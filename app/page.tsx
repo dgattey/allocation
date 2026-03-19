@@ -47,8 +47,6 @@ export default function Home() {
           </p>
         </section>
 
-        <HomeHowItWorksSection />
-
         {portfolios.length > 0 && (
           <section className="rounded-[30px] border border-border/70 bg-surface px-5 py-5 shadow-[var(--shadow-lg)] md:px-8 md:py-8">
             <PortfolioLibraryNav
@@ -66,6 +64,8 @@ export default function Home() {
             isLoading={isUploading}
           />
         </section>
+
+        <HomeHowItWorksSection />
       </div>
     </main>
   );
