@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { TreemapBrandMark } from "./components/TreemapBrandMark";
 import { HomeHowItWorksSection } from "./components/HomeHowItWorksSection";
 import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
 import { UploadView } from "./components/UploadView";
@@ -29,15 +29,7 @@ export default function Home() {
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6 md:gap-8">
         <section className="grid grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_auto] items-start gap-x-3 gap-y-2 md:gap-x-5 md:gap-y-2">
           <div className="row-span-2 flex h-full min-h-0 items-start justify-start self-stretch">
-            <Image
-              src="/icon.svg"
-              alt=""
-              width={72}
-              height={72}
-              className="h-full w-auto max-w-[4.75rem] object-contain object-left md:max-w-[6.25rem]"
-              aria-hidden="true"
-              priority
-            />
+            <TreemapBrandMark className="h-full w-auto max-w-[4.75rem] shrink-0 md:max-w-[6.25rem]" />
           </div>
           <h1 className="col-start-2 row-start-1 min-w-0 text-2xl font-semibold text-text-primary md:text-4xl">
             Where&apos;s my money?
