@@ -1,12 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { formatDollar, formatDate } from "@/lib/utils";
 import type { StoredPortfolioSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { navigateWithViewTransition } from "@/lib/viewTransitionNav";
+import {
+  applyPortfolioTileViewTransitionNames,
+  clearPortfolioViewTransitionReturn,
+  peekPortfolioViewTransitionReturn,
+  portfolioViewTransitionShell,
+  portfolioViewTransitionTitle,
+  portfolioViewTransitionValue,
+} from "@/lib/portfolioViewTransition";
 
 interface PortfolioLibraryNavProps {
   portfolios: StoredPortfolioSummary[];
@@ -66,10 +72,24 @@ function PortfolioTile({
   onRemove,
   onRename,
 }: PortfolioTileProps) {
-  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(portfolio.name);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const tileRootRef = useRef<HTMLDivElement | null>(null);
+  const titleRef = useRef<HTMLParagraphElement | null>(null);
+  const valueRef = useRef<HTMLSpanElement | null>(null);
+  const [fromReturnVt, setFromReturnVt] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!peekPortfolioViewTransitionReturn(portfolio.id)) {
+      return;
+    }
+    clearPortfolioViewTransitionReturn();
+    // Session marker is written right before router.back(); promote to state so the
+    // home tree includes matching view-transition-name values before paint.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot read from sessionStorage for View Transitions
+    setFromReturnVt(true);
+  }, [portfolio.id]);
 
   useEffect(() => {
     if (isEditing) {
@@ -118,11 +138,12 @@ function PortfolioTile({
     ) {
       return;
     }
-    e.preventDefault();
-    const href = `/portfolio/${portfolio.id}`;
-    navigateWithViewTransition("forward", () => {
-      router.push(href);
-    });
+    applyPortfolioTileViewTransitionNames(
+      portfolio.id,
+      tileRootRef.current,
+      titleRef.current,
+      valueRef.current
+    );
   }
 
   const cardContent = (
@@ -143,7 +164,15 @@ function PortfolioTile({
             />
           ) : (
             <div className="flex items-center gap-2 min-w-0">
-              <p className="truncate text-sm font-semibold text-text-primary">
+              <p
+                ref={titleRef}
+                className="truncate text-sm font-semibold text-text-primary"
+                style={
+                  fromReturnVt
+                    ? { viewTransitionName: portfolioViewTransitionTitle(portfolio.id) }
+                    : undefined
+                }
+              >
                 {portfolio.name}
               </p>
               {onRename && (
@@ -184,7 +213,14 @@ function PortfolioTile({
 
       <div className="mt-4 flex items-center justify-between gap-2 text-xs text-text-muted">
         <span>{portfolio.positionCount} positions</span>
-        <span>
+        <span
+          ref={valueRef}
+          style={
+            fromReturnVt
+              ? { viewTransitionName: portfolioViewTransitionValue(portfolio.id) }
+              : undefined
+          }
+        >
           {typeof portfolio.totalValue === "number"
             ? formatDollar(portfolio.totalValue)
             : "Needs refresh"}
@@ -195,12 +231,18 @@ function PortfolioTile({
 
   return (
     <div
+      ref={tileRootRef}
       className={cn(
         "group relative rounded-2xl border p-4 transition-colors",
         isActive
           ? "border-accent bg-accent-bg/60"
           : "border-border/70 bg-bg/70 hover:border-accent/40 hover:bg-surface-hover/60"
       )}
+      style={
+        fromReturnVt
+          ? { viewTransitionName: portfolioViewTransitionShell(portfolio.id) }
+          : undefined
+      }
     >
       {isEditing ? (
         <div className="block min-h-full">{cardContent}</div>

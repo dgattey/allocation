@@ -261,72 +261,55 @@ body {
     transform: none !important;
   }
 
-  html[data-view-transition-dir]::view-transition-old(root),
-  html[data-view-transition-dir]::view-transition-new(root) {
+  html::view-transition-old(root),
+  html::view-transition-new(root),
+  ::view-transition-group(*) {
     animation: none !important;
   }
 }
 
-/* === View Transitions — home ↔ portfolio (same-document / App Router) === */
-@keyframes vt-forward-old {
+/* === View Transitions — home ↔ portfolio (Next experimental + shared element names) === */
+@keyframes vt-root-soft {
   from {
-    transform: translateX(0);
+    opacity: 0.94;
+    filter: brightness(0.98);
   }
   to {
-    transform: translateX(-26%);
-  }
-}
-@keyframes vt-forward-new {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-@keyframes vt-back-old {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(26%);
-  }
-}
-@keyframes vt-back-new {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
+    opacity: 1;
+    filter: brightness(1);
   }
 }
 
 @supports (view-transition-name: none) {
-  html[data-view-transition-dir="forward"]::view-transition-old(root) {
-    animation: vt-forward-old 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+  html::view-transition-old(root),
+  html::view-transition-new(root) {
+    animation: vt-root-soft 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
   }
-  html[data-view-transition-dir="forward"]::view-transition-new(root) {
-    animation: vt-forward-new 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+
+  ::view-transition-group(*) {
+    animation-duration: 0.42s;
+    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
   }
-  html[data-view-transition-dir="back"]::view-transition-old(root) {
-    animation: vt-back-old 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
-  }
-  html[data-view-transition-dir="back"]::view-transition-new(root) {
-    animation: vt-back-new 0.38s cubic-bezier(0.32, 0.72, 0, 1) both;
+
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: inherit;
+    animation-timing-function: inherit;
+    mix-blend-mode: normal;
   }
 }
 
 /*
- * During View Transitions, skip route-level entrance animations so the slide
- * is not stacked with fade/scale on the portfolio screen (avoids “push then swap”).
+ * While the document is running a view transition, skip route entrance motion so
+ * we do not stack hero animations on top of the shared-element morph.
  */
-html[data-view-transition-dir] .animate-fade-in,
-html[data-view-transition-dir] .animate-soft-rise,
-html[data-view-transition-dir] .animate-scale-in,
-html[data-view-transition-dir] .animate-soft-pop,
-html[data-view-transition-dir] .animate-tile-in,
-html[data-view-transition-dir] .animate-slide-up,
-html[data-view-transition-dir] .animate-slide-down {
+html:has(::view-transition-group(*)) .animate-fade-in,
+html:has(::view-transition-group(*)) .animate-soft-rise,
+html:has(::view-transition-group(*)) .animate-scale-in,
+html:has(::view-transition-group(*)) .animate-soft-pop,
+html:has(::view-transition-group(*)) .animate-tile-in,
+html:has(::view-transition-group(*)) .animate-slide-up,
+html:has(::view-transition-group(*)) .animate-slide-down {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;

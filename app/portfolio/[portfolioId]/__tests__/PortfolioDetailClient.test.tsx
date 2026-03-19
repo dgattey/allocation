@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   FidelityPosition,
@@ -10,12 +11,14 @@ import { PortfolioDetailClient } from "../PortfolioDetailClient";
 const {
   pushMock,
   replaceMock,
+  backMock,
   searchParamsState,
   storedRecordState,
 } = vi.hoisted(() => ({
   pushMock: vi.fn(),
   replaceMock: vi.fn(),
-    searchParamsState: {
+  backMock: vi.fn(),
+  searchParamsState: {
     value:
       "tab=details&q=apple&accounts=Account%20B&types=Stocks&funds=FUND-B&sort=currentPrice&dir=asc&table=positions&chart=aggregated",
   },
@@ -30,10 +33,22 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: pushMock,
     replace: replaceMock,
+    back: backMock,
   }),
   usePathname: () => "/portfolio/portfolio-1",
   useSearchParams: () => new URLSearchParams(searchParamsState.value),
 }));
+
+function renderPortfolioDetail() {
+  return render(
+    <Suspense fallback={null}>
+      <PortfolioDetailClient
+        portfolioId="portfolio-1"
+        initialSearchParamsString={searchParamsState.value}
+      />
+    </Suspense>
+  );
+}
 
 vi.mock("@/hooks/useIsMobile", () => ({
   useIsMobile: () => false,
@@ -200,7 +215,7 @@ describe("PortfolioDetailClient", () => {
   });
 
   it("hydrates the dashboard state from query params", () => {
-    render(<PortfolioDetailClient portfolioId="portfolio-1" />);
+    renderPortfolioDetail();
 
     expect(screen.getByTestId("search-query")).toHaveTextContent("apple");
     expect(screen.getByTestId("accounts")).toHaveTextContent("Account B");
@@ -213,7 +228,7 @@ describe("PortfolioDetailClient", () => {
   });
 
   it("writes filter and view updates back into the URL without touching unrelated params", async () => {
-    render(<PortfolioDetailClient portfolioId="portfolio-1" />);
+    renderPortfolioDetail();
 
     fireEvent.click(screen.getByRole("button", { name: "Update filters" }));
     fireEvent.click(screen.getByRole("button", { name: "Sort by value" }));
@@ -240,10 +255,24 @@ describe("PortfolioDetailClient", () => {
   });
 
   it("responds to external query string changes", async () => {
-    const { rerender } = render(<PortfolioDetailClient portfolioId="portfolio-1" />);
+    const { rerender } = render(
+      <Suspense fallback={null}>
+        <PortfolioDetailClient
+          portfolioId="portfolio-1"
+          initialSearchParamsString={searchParamsState.value}
+        />
+      </Suspense>
+    );
 
     searchParamsState.value = "tab=details&q=tsla&dir=asc";
-    rerender(<PortfolioDetailClient portfolioId="portfolio-1" />);
+    rerender(
+      <Suspense fallback={null}>
+        <PortfolioDetailClient
+          portfolioId="portfolio-1"
+          initialSearchParamsString={searchParamsState.value}
+        />
+      </Suspense>
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId("search-query")).toHaveTextContent("tsla");

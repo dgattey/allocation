@@ -1,10 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
 import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
+import { PortfolioSearchParamsBridge } from "@/app/components/PortfolioSearchParamsBridge";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePortfolioUrlSync } from "@/hooks/usePortfolioUrlSync";
 import { usePortfolioViewState } from "@/hooks/usePortfolioViewState";
@@ -13,22 +20,30 @@ import {
   DESKTOP_TREE_MAP_LAYOUT,
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
+import { markPortfolioViewTransitionReturn } from "@/lib/portfolioViewTransition";
 import { updateStoredPortfolioName } from "@/lib/storage";
 import { parsePortfolioUrlState } from "@/lib/urlFilters";
-import { navigateWithViewTransition } from "@/lib/viewTransitionNav";
 
 interface PortfolioDetailClientProps {
   portfolioId: string;
+  initialSearchParamsString?: string;
 }
 
 export function PortfolioDetailClient({
   portfolioId,
+  initialSearchParamsString = "",
 }: PortfolioDetailClientProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const isMobile = useIsMobile();
-  const searchParamsString = searchParams.toString();
+  const [searchParamsString, setSearchParamsString] = useState(
+    initialSearchParamsString
+  );
+
+  useEffect(() => {
+    setSearchParamsString(initialSearchParamsString);
+  }, [initialSearchParamsString]);
+
   const initialUrlState = useMemo(
     () => parsePortfolioUrlState(new URLSearchParams(searchParamsString)),
     [searchParamsString]
@@ -78,34 +93,58 @@ export function PortfolioDetailClient({
     [record]
   );
 
+  const searchParamsSync = useMemo(
+    () => (
+      <Suspense fallback={null}>
+        <PortfolioSearchParamsBridge
+          onSearchParamsString={setSearchParamsString}
+        />
+      </Suspense>
+    ),
+    [setSearchParamsString]
+  );
+
   if (record.isMissing) {
     return (
-      <PortfolioEmptyState
-        title="Portfolio not found"
-        description="That saved portfolio is no longer available on this device."
-      />
+      <>
+        {searchParamsSync}
+        <PortfolioEmptyState
+          title="Portfolio not found"
+          description="That saved portfolio is no longer available on this device."
+        />
+      </>
     );
   }
 
   if (!record.positions) {
-    return <PortfolioLoadingState error={record.error} />;
+    return (
+      <>
+        {searchParamsSync}
+        <PortfolioLoadingState error={record.error} />
+      </>
+    );
   }
 
   if (!record.portfolioData) {
     return (
-      <PortfolioLoadingState
-        enableIntroAnimation={!record.restoredFromStorage}
-        error={record.error}
-      />
+      <>
+        {searchParamsSync}
+        <PortfolioLoadingState
+          enableIntroAnimation={!record.restoredFromStorage}
+          error={record.error}
+        />
+      </>
     );
   }
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">
+      {searchParamsSync}
       <Dashboard
         portfolioData={record.portfolioData}
         portfolioName={record.summary?.name ?? "Portfolio"}
         portfolioId={portfolioId}
+        viewTransitionPortfolioId={portfolioId}
         onRenamePortfolio={handleRenamePortfolio}
         filteredTreeMapNodes={viewState.filteredTreeMapNodes}
         filteredRows={viewState.filteredRows}
@@ -117,11 +156,14 @@ export function PortfolioDetailClient({
         onSort={viewState.handleSort}
         expandedRows={viewState.expandedRows}
         onToggleExpand={viewState.toggleExpand}
-        onBackToPicker={() =>
-          navigateWithViewTransition("back", () => {
+        onBackToPicker={() => {
+          markPortfolioViewTransitionReturn(portfolioId);
+          if (typeof window !== "undefined" && window.history.length > 1) {
+            router.back();
+          } else {
             router.push("/");
-          })
-        }
+          }
+        }}
         isLoading={record.isLoading}
         viewMode={viewState.viewMode}
         onViewModeChange={viewState.setViewMode}
