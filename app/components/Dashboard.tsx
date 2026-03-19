@@ -169,7 +169,21 @@ export function Dashboard({
   }, [filters]);
 
   const headerRef = useRef<HTMLElement>(null);
+  const searchShellRef = useRef<HTMLDivElement>(null);
   const [dockSentinelRef, isSearchDocked, headerHeightPx] = useIsStickyDocked(headerRef);
+  const [searchShellHeightPx, setSearchShellHeightPx] = useState(0);
+
+  useEffect(() => {
+    const searchShell = searchShellRef.current;
+    if (!searchShell) return;
+
+    const updateHeight = () => setSearchShellHeightPx(searchShell.getBoundingClientRect().height);
+    updateHeight();
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(searchShell);
+    return () => observer.disconnect();
+  }, []);
 
   const handleSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -206,10 +220,20 @@ export function Dashboard({
           "sticky-header sticky top-0 z-40",
           isSearchDocked && "border-b-0"
         )}
+        style={
+          {
+            "--header-search-absorb-height": `${searchShellHeightPx}px`,
+          } as CSSProperties
+        }
       >
         <div
+          aria-hidden="true"
+          data-testid="header-search-absorber"
+          className={cn("sticky-header-search-absorber", isSearchDocked && "is-docked")}
+        />
+        <div
           className={cn(
-            "max-w-[1400px] mx-auto py-5",
+            "relative z-10 max-w-[1400px] mx-auto py-5",
             isMobile ? "px-4" : "px-6"
           )}
         >
@@ -482,13 +506,13 @@ export function Dashboard({
       >
         <div ref={dockSentinelRef} className="h-px" aria-hidden />
         <div
+          ref={searchShellRef}
           data-testid="portfolio-search-shell"
           className={cn(
             "sticky mb-4 py-3",
-            "transition-[background-color,backdrop-filter,box-shadow,top] duration-200 ease-out",
             "w-screen relative",
             isSearchDocked
-              ? "search-bar-docked-unified z-50"
+              ? "bg-transparent z-50"
               : "bg-transparent z-40"
           )}
           style={{

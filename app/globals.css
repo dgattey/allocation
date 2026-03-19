@@ -160,65 +160,35 @@ body {
   50% { border-color: var(--accent); opacity: 0.8; }
 }
 
-/* === Sticky Header — Scroll-Driven Animation === */
-@keyframes header-reveal {
-  from {
-    background-color: transparent;
-    box-shadow: none;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    background-color: var(--glass-bg);
-    box-shadow: var(--shadow); /* No top border - unified with header above */
-    backdrop-filter: blur(20px) saturate(1.2);
-  }
-}
-
-/* Header keeps consistent background — no scroll-driven change when search bar docks */
+/* === Sticky Header — Search Dock Absorption === */
 .sticky-header {
+  position: relative;
   background-color: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(1.2);
   border-bottom: 1px solid transparent;
   isolation: isolate;
 }
 
-/* When search bar docks, header stays transparent so only search bar has glass */
-.header-transparent-when-docked {
-  background-color: transparent !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
-  border-bottom-color: transparent !important;
-}
-
-.search-bar-docked {
+.sticky-header-search-absorber {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: var(--header-search-absorb-height, 0px);
   background-color: var(--glass-bg);
   backdrop-filter: blur(20px) saturate(1.2);
-  /* No top border — unifies with header above for one continuous background */
-  box-shadow: var(--shadow);
+  transform: scaleY(0);
+  transform-origin: top;
+  opacity: 0;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms ease,
+    box-shadow 220ms ease;
+  will-change: transform, opacity;
 }
 
-/* When docked, header + search bar share one continuous background (no seam) */
-.search-bar-docked-unified {
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(1.2);
-  box-shadow: var(--shadow); /* No top border — flows from header above */
-}
-
-/* When docked, header + search bar share one continuous background (no seam) */
-.header-unified-with-search {
-  border-bottom-width: 0;
-}
-
-.search-bar-docked-unified {
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(1.2);
-  box-shadow: var(--shadow);
-}
-
-/* When docked, no top border so it seamlessly continues from header above */
-.search-bar-docked-unified {
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(20px) saturate(1.2);
+.sticky-header-search-absorber.is-docked {
+  transform: scaleY(1);
+  opacity: 1;
   box-shadow: var(--shadow);
 }
 
@@ -272,6 +242,7 @@ body {
   .animate-tile-in,
   .skeleton,
   .sticky-header,
+  .sticky-header-search-absorber,
   .hover-lift {
     animation: none !important;
     transition-duration: 0.01ms !important;
