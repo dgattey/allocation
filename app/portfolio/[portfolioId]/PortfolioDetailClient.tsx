@@ -15,6 +15,7 @@ import {
 } from "@/lib/portfolioLayout";
 import { updateStoredPortfolioName } from "@/lib/storage";
 import { parsePortfolioUrlState } from "@/lib/urlFilters";
+import { navigateWithViewTransition } from "@/lib/viewTransitionNav";
 
 interface PortfolioDetailClientProps {
   portfolioId: string;
@@ -65,8 +66,8 @@ export function PortfolioDetailClient({
 
   useEffect(() => {
     document.title = record.summary
-      ? `${record.summary.name} - Your portfolio`
-      : "Your portfolio";
+      ? `${record.summary.name} – Where's my money?`
+      : "Where's my money?";
   }, [record.summary]);
 
   const handleRenamePortfolio = useCallback(
@@ -116,7 +117,11 @@ export function PortfolioDetailClient({
         onSort={viewState.handleSort}
         expandedRows={viewState.expandedRows}
         onToggleExpand={viewState.toggleExpand}
-        onBackToPicker={() => router.push("/")}
+        onBackToPicker={() =>
+          navigateWithViewTransition("back", () => {
+            router.push("/");
+          })
+        }
         isLoading={record.isLoading}
         viewMode={viewState.viewMode}
         onViewModeChange={viewState.setViewMode}
