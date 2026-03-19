@@ -15,6 +15,7 @@ export default function Home() {
     isUploading,
     error,
     removePortfolioById,
+    renamePortfolio,
   } = usePortfolioLibrary();
 
   function handleFilesSelect(files: File[]) {
@@ -51,6 +52,7 @@ export default function Home() {
             <PortfolioLibraryNav
               portfolios={portfolios}
               onRemovePortfolio={removePortfolioById}
+              onRenamePortfolio={renamePortfolio}
             />
           </section>
         )}

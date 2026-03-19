@@ -77,6 +77,19 @@ export function formatHeaderCurrency(n: number): string {
 }
 
 /**
+ * Format an ISO timestamp for display: "Mar 19, 2026"
+ */
+export function formatDate(isoTimestamp: string): string {
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+/**
  * Conditional class name joiner (like clsx/cn)
  */
 export function cn(

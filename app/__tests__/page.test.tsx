@@ -84,6 +84,7 @@ describe("Home page", () => {
       refreshLibrary: vi.fn(),
       uploadFiles: vi.fn(),
       removePortfolioById: vi.fn(),
+      renamePortfolio: vi.fn(),
     });
 
     renderWithProvider(<Home />);
@@ -103,6 +104,7 @@ describe("Home page", () => {
       refreshLibrary: vi.fn(),
       uploadFiles: vi.fn(),
       removePortfolioById: vi.fn(),
+      renamePortfolio: vi.fn(),
     });
 
     renderWithProvider(<Home />);
@@ -122,6 +124,7 @@ describe("Home page", () => {
       refreshLibrary: vi.fn(),
       uploadFiles: vi.fn(),
       removePortfolioById: vi.fn(),
+      renamePortfolio: vi.fn(),
     });
 
     renderWithProvider(<Home />);

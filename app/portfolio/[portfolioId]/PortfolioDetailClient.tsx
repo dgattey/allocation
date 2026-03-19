@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
@@ -12,6 +12,7 @@ import {
   DESKTOP_TREE_MAP_LAYOUT,
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
+import { updateStoredPortfolioName } from "@/lib/storage";
 
 interface PortfolioDetailClientProps {
   portfolioId: string;
@@ -44,6 +45,14 @@ export function PortfolioDetailClient({
       : "Your portfolio";
   }, [record.summary]);
 
+  const handleRenamePortfolio = useCallback(
+    (id: string, name: string) => {
+      updateStoredPortfolioName(id, name);
+      record.refreshFromStorage();
+    },
+    [record]
+  );
+
   if (record.isMissing) {
     return (
       <PortfolioEmptyState
@@ -71,6 +80,8 @@ export function PortfolioDetailClient({
       <Dashboard
         portfolioData={record.portfolioData}
         portfolioName={record.summary?.name ?? "Portfolio"}
+        portfolioId={portfolioId}
+        onRenamePortfolio={handleRenamePortfolio}
         filteredTreeMapNodes={viewState.filteredTreeMapNodes}
         filteredRows={viewState.filteredRows}
         isMobile={isMobile}
