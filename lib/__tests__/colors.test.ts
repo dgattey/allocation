@@ -8,6 +8,7 @@ import {
 
 describe("treemap mark icon", () => {
   it("public/icon.svg uses the same fills and stroke as lib/colors.ts", () => {
+    // When this fails after a palette change, update icon.svg then run `pnpm generate-favicon`.
     const svgPath = join(process.cwd(), "public", "icon.svg");
     const svg = readFileSync(svgPath, "utf8");
     for (const fill of TREEMAP_MARK_TILE_FILLS) {
