@@ -14,7 +14,7 @@ const PARAM_SORT = "sort";
 const PARAM_DIRECTION = "dir";
 /** Table row mode: holdings vs positions (matches toolbar TABLE labels). */
 const PARAM_TABLE = "table";
-/** Treemap grouping: fund vs aggregated (matches toolbar GRAPH labels). */
+/** Treemap grouping: fund vs aggregated (matches toolbar Chart labels). */
 const PARAM_CHART = "chart";
 
 /** Legacy keys — still read when building state from old links; never written. */
