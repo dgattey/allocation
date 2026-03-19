@@ -16,6 +16,7 @@ import type {
 import { hasActivePortfolioFilters } from "@/lib/portfolioFilters";
 import { getFilteredRows } from "@/lib/portfolioSelectors";
 import { formatDollar, formatHeaderCurrency } from "@/lib/utils";
+import { useTimeAgo } from "@/hooks/useTimeAgo";
 import { AnimatedNumber } from "./primitives/AnimatedNumber";
 import { GainLoss } from "./primitives/GainLoss";
 import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
@@ -95,6 +96,7 @@ export function Dashboard({
   isRefreshing = false,
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
+  const timeAgo = useTimeAgo(lastUpdated);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(portfolioName);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -324,11 +326,51 @@ export function Dashboard({
 
             <div
               className={cn(
-                "flex shrink-0 flex-col items-start justify-center gap-2 md:items-end",
+                "flex shrink-0 flex-col items-start gap-2 md:items-end",
                 enableIntroAnimation && "animate-soft-rise"
               )}
               style={{ "--enter-delay": "120ms" } as CSSProperties}
             >
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-text-muted">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {timeAgo}
+                </div>
+                {onRefresh && (
+                  <button
+                    type="button"
+                    onClick={onRefresh}
+                    disabled={isRefreshing}
+                    aria-label="Refresh data"
+                    title="Refresh quotes and holdings"
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-surface px-3 py-1.5",
+                      "text-xs font-medium text-text-primary shadow-sm transition-all duration-200 cursor-pointer",
+                      "hover:bg-surface-hover hover-lift press-down",
+                      "disabled:opacity-50 disabled:cursor-not-allowed"
+                    )}
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={cn("shrink-0", isRefreshing && "animate-spin")}
+                    >
+                      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                      <path d="M3 3v5h5" />
+                      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                      <path d="M16 21h5v-5" />
+                    </svg>
+                    Refresh
+                  </button>
+                )}
+              </div>
+
               {fetchError && (
                 <FetchStatusBadge
                   error={fetchError}
@@ -377,9 +419,6 @@ export function Dashboard({
             summary={summary}
             filters={filters}
             onFiltersChange={onFiltersChange}
-            lastUpdated={lastUpdated}
-            onRefresh={onRefresh ?? (() => {})}
-            isRefreshing={isRefreshing}
             viewMode={viewMode}
             onViewModeChange={onViewModeChange}
             treeMapGrouping={treeMapGrouping}
@@ -472,9 +511,6 @@ export function Dashboard({
           summary={summary}
           filters={filters}
           onFiltersChange={onFiltersChange}
-          lastUpdated={lastUpdated}
-          onRefresh={onRefresh ?? (() => {})}
-          isRefreshing={isRefreshing}
           viewMode={viewMode}
           onViewModeChange={onViewModeChange}
           treeMapGrouping={treeMapGrouping}

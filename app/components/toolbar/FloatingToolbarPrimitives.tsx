@@ -132,7 +132,7 @@ export function FilterToggleButton({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold whitespace-nowrap transition-all",
+        "inline-flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-all",
         fullWidth && "w-full",
         active
           ? "bg-white/14 text-white border-white/0 shadow-sm ring-1 ring-white/10"
@@ -140,8 +140,8 @@ export function FilterToggleButton({
       )}
     >
       <svg
-        width="14"
-        height="14"
+        width="12"
+        height="12"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -156,7 +156,7 @@ export function FilterToggleButton({
       </svg>
       <span>Filters</span>
       {activeFilterCount > 0 && (
-        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-white">
+        <span className="inline-flex min-w-4 items-center justify-center rounded-full bg-accent px-1 py-px text-[10px] font-bold leading-none text-white">
           {activeFilterCount}
         </span>
       )}

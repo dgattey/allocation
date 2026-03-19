@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import type {
   FilterState,
   FundOption,
@@ -10,7 +10,6 @@ import type {
 } from "@/lib/types";
 import { hasSearchQuery } from "@/lib/portfolioFilters";
 import { cn } from "@/lib/utils";
-import { useTimeAgo } from "@/hooks/useTimeAgo";
 import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
 import { FloatingToolbarFiltersPanel } from "./toolbar/FloatingToolbarFiltersPanel";
 import {
@@ -25,9 +24,6 @@ interface FloatingToolbarProps {
   summary: PortfolioSummary;
   filters: FilterState;
   onFiltersChange: (f: FilterState) => void;
-  lastUpdated: string;
-  onRefresh: () => void;
-  isRefreshing: boolean;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   treeMapGrouping: TreeMapGrouping;
@@ -45,9 +41,6 @@ export function FloatingToolbar({
   summary,
   filters,
   onFiltersChange,
-  lastUpdated,
-  onRefresh,
-  isRefreshing,
   viewMode,
   onViewModeChange,
   treeMapGrouping,
@@ -61,6 +54,7 @@ export function FloatingToolbar({
   enableIntroAnimation = true,
 }: FloatingToolbarProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const hasFilters =
     filters.investmentTypes.length > 0 ||
     filters.accounts.length > 0 ||
@@ -72,7 +66,19 @@ export function FloatingToolbar({
     (hasSearchQuery(filters) ? 1 : 0) +
     selectedFunds.length;
   const filterSummaryItems = buildFilterSummaryItems(filters, selectedFunds);
-  const timeAgo = useTimeAgo(lastUpdated);
+
+  useEffect(() => {
+    if (!showFilters) return;
+    function handlePointerDown(e: PointerEvent) {
+      if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowFilters(false);
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => document.removeEventListener("pointerdown", handlePointerDown, true);
+  }, [showFilters]);
 
   function handleAccountChange(event: ChangeEvent<HTMLSelectElement>) {
     const value = event.target.value;
@@ -110,6 +116,7 @@ export function FloatingToolbar({
       )}
     >
       <div
+        ref={toolbarRef}
         className={cn(
           "flex flex-col gap-3 rounded-2xl border border-white/[0.06] bg-[#1a1d28]/92 px-4 py-3",
           "backdrop-blur-2xl saturate-150 ring-1 ring-inset ring-white/[0.04]",
@@ -121,49 +128,15 @@ export function FloatingToolbar({
       >
         {isMobile ? (
           <>
-            <div className="flex items-center justify-between gap-3">
-              {hasFilters ? (
+            {hasFilters && (
+              <div className="flex items-center justify-between gap-3">
                 <ResetFiltersButton
                   onClick={onResetFilters}
                   label="Reset filters"
                   className="h-7 shrink-0 px-2 text-red-400/80 hover:text-red-300"
                 />
-              ) : (
-                <span className="h-4" aria-hidden="true" />
-              )}
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onRefresh}
-                  disabled={isRefreshing}
-                  aria-label="Refresh data"
-                  title="Refresh quotes and holdings"
-                  className="shrink-0 rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white/80 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={isRefreshing ? "animate-spin" : ""}
-                  >
-                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                    <path d="M3 3v5h5" />
-                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                    <path d="M16 21h5v-5" />
-                  </svg>
-                </button>
-                <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-white/40">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  {timeAgo}
-                </div>
               </div>
-            </div>
+            )}
 
             <FilterSummaryStrip
               items={filterSummaryItems}
@@ -216,7 +189,7 @@ export function FloatingToolbar({
             </div>
           </>
         ) : (
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex shrink-0 flex-wrap items-center gap-3">
               <ToolbarSection label="View">
                 <SegmentButton
@@ -247,7 +220,9 @@ export function FloatingToolbar({
                   Flat
                 </SegmentButton>
               </ToolbarSection>
+            </div>
 
+            <div className="flex shrink-0 items-center gap-3">
               <button
                 type="button"
                 onClick={() => setShowFilters((open) => !open)}
@@ -258,16 +233,14 @@ export function FloatingToolbar({
                   activeFilterCount={activeFilterCount}
                 />
               </button>
-            </div>
 
-            <div className="min-w-0 flex-1">
-              <FilterSummaryStrip
-                items={filterSummaryItems}
-                emptyLabel="All accounts, all funds, all types"
-              />
-            </div>
+              <div className="min-w-0 max-w-xs">
+                <FilterSummaryStrip
+                  items={filterSummaryItems}
+                  emptyLabel="All accounts, all funds, all types"
+                />
+              </div>
 
-            <div className="ml-auto flex shrink-0 items-center gap-3">
               {hasFilters && (
                 <ResetFiltersButton
                   onClick={onResetFilters}
@@ -275,36 +248,6 @@ export function FloatingToolbar({
                   className="h-7 shrink-0 px-2 text-red-400/80 hover:text-red-300"
                 />
               )}
-
-              <button
-                type="button"
-                onClick={onRefresh}
-                disabled={isRefreshing}
-                aria-label="Refresh data"
-                title="Refresh quotes and holdings"
-                className="h-7 w-7 shrink-0 rounded-lg p-1.5 text-white/50 hover:bg-white/10 hover:text-white/80 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={isRefreshing ? "animate-spin" : ""}
-                >
-                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                  <path d="M3 3v5h5" />
-                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                  <path d="M16 21h5v-5" />
-                </svg>
-              </button>
-              <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-white/40">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {timeAgo}
-              </div>
             </div>
           </div>
         )}
