@@ -138,6 +138,11 @@ function getActiveSummaryLabel(
   const hasFundFilter = selectedFunds.length > 0;
   const searchActive = hasSearchQuery(filters);
   const searchLabel = filters.searchQuery?.trim();
+  const activeFilterCount =
+    filters.accounts.length +
+    filters.investmentTypes.length +
+    selectedFunds.length +
+    (searchActive ? 1 : 0);
 
   if (searchActive && !hasAccountFilter && !hasTypeFilter && !hasFundFilter) {
     return searchLabel ? `Search: ${searchLabel}` : "Filtered portfolio";
@@ -164,7 +169,7 @@ function getActiveSummaryLabel(
       : `${filters.investmentTypes.length} types selected`;
   }
 
-  return "Filtered portfolio";
+  return `${activeFilterCount} ${activeFilterCount === 1 ? "filter" : "filters"}`;
 }
 
 function buildVisibleRow(
