@@ -50,6 +50,7 @@ export function PortfolioDetailClient({
     isMobile,
     initialUrlState,
   });
+  const { syncWithUrlState } = viewState;
   const lastAppliedSearchParamsRef = useRef(searchParamsString);
   const skipNextUrlWriteRef = useRef(false);
 
@@ -60,8 +61,8 @@ export function PortfolioDetailClient({
 
     lastAppliedSearchParamsRef.current = searchParamsString;
     skipNextUrlWriteRef.current = true;
-    viewState.syncWithUrlState(initialUrlState);
-  }, [initialUrlState, searchParamsString, viewState]);
+    syncWithUrlState(initialUrlState);
+  }, [initialUrlState, searchParamsString, syncWithUrlState]);
 
   useEffect(() => {
     if (skipNextUrlWriteRef.current) {
