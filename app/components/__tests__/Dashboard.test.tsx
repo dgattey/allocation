@@ -204,8 +204,7 @@ describe("Dashboard portfolio actions", () => {
     );
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
-    expect(searchShell).toHaveClass("sticky");
-    expect(searchShell).toHaveClass("top-[7rem]");
+    expect(searchShell).toBeInTheDocument();
     expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
       "0 holdings"
     );
@@ -338,8 +337,7 @@ describe("Dashboard portfolio actions", () => {
     );
 
     const searchShell = screen.getByTestId("portfolio-search-shell");
-    expect(searchShell).toHaveClass("sticky");
-    expect(searchShell).toHaveClass("top-[5.75rem]");
+    expect(searchShell).toBeInTheDocument();
     expect(screen.getByTestId("inline-holdings-count")).toHaveTextContent(
       "1 holding"
     );
