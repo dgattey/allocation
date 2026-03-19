@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
@@ -14,8 +14,11 @@ import {
 } from "@/lib/portfolioLayout";
 import { updateStoredPortfolioName } from "@/lib/storage";
 import {
+  arePortfolioUrlStatesEqual,
   buildPortfolioSearchParams,
+  normalizePortfolioUrlState,
   parsePortfolioUrlState,
+  type PortfolioUrlState,
 } from "@/lib/urlFilters";
 
 interface PortfolioDetailClientProps {
@@ -50,19 +53,27 @@ export function PortfolioDetailClient({
     isMobile,
     initialUrlState,
   });
-  const { syncWithUrlState } = viewState;
-  const lastAppliedSearchParamsRef = useRef(searchParamsString);
+  const lastAppliedPortfolioUrlRef = useRef<PortfolioUrlState | null>(null);
+  const syncWithUrlStateRef = useRef(viewState.syncWithUrlState);
   const skipNextUrlWriteRef = useRef(false);
 
+  useLayoutEffect(() => {
+    syncWithUrlStateRef.current = viewState.syncWithUrlState;
+  });
+
   useEffect(() => {
-    if (lastAppliedSearchParamsRef.current === searchParamsString) {
+    const fromUrl = parsePortfolioUrlState(new URLSearchParams(searchParamsString));
+    if (
+      lastAppliedPortfolioUrlRef.current !== null &&
+      arePortfolioUrlStatesEqual(fromUrl, lastAppliedPortfolioUrlRef.current)
+    ) {
       return;
     }
 
-    lastAppliedSearchParamsRef.current = searchParamsString;
+    lastAppliedPortfolioUrlRef.current = fromUrl;
     skipNextUrlWriteRef.current = true;
-    syncWithUrlState(initialUrlState);
-  }, [initialUrlState, searchParamsString, syncWithUrlState]);
+    syncWithUrlStateRef.current(fromUrl);
+  }, [searchParamsString]);
 
   useEffect(() => {
     if (skipNextUrlWriteRef.current) {
@@ -70,20 +81,22 @@ export function PortfolioDetailClient({
       return;
     }
 
-    const nextSearchParams = buildPortfolioSearchParams(
-      {
-        filters: viewState.filters,
-        selectedFunds: viewState.selectedFunds,
-        sortConfig: viewState.sortConfig,
-        viewMode: viewState.viewMode,
-        treeMapGrouping: viewState.treeMapGrouping,
-      },
-      new URLSearchParams(searchParamsString)
-    );
-
-    if (nextSearchParams === searchParamsString) {
+    const desired = normalizePortfolioUrlState({
+      filters: viewState.filters,
+      selectedFunds: viewState.selectedFunds,
+      sortConfig: viewState.sortConfig,
+      viewMode: viewState.viewMode,
+      treeMapGrouping: viewState.treeMapGrouping,
+    });
+    const fromUrl = parsePortfolioUrlState(new URLSearchParams(searchParamsString));
+    if (arePortfolioUrlStatesEqual(fromUrl, desired)) {
       return;
     }
+
+    const nextSearchParams = buildPortfolioSearchParams(
+      desired,
+      new URLSearchParams(searchParamsString)
+    );
 
     router.replace(nextSearchParams ? `${pathname}?${nextSearchParams}` : pathname, {
       scroll: false,
