@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { formatDollar } from "@/lib/utils";
+import { formatDollar, formatDate } from "@/lib/utils";
 import type { StoredPortfolioSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -157,6 +157,9 @@ function PortfolioTile({
           )}
           <p className="mt-1 truncate text-xs text-text-muted">
             {portfolio.sourceFileName}
+          </p>
+          <p className="mt-0.5 text-xs text-text-muted">
+            Uploaded {formatDate(portfolio.uploadedAt)}
           </p>
         </div>
         <div className="h-8 w-8 shrink-0" />
