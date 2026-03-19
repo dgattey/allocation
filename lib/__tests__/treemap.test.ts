@@ -5,6 +5,7 @@ import {
   filterFundTreeMapNodes,
   getFundOptions,
 } from "../treemap";
+import { getColorForSymbol } from "../colors";
 import type { FilterState, PositionSource, TableRow, TreeMapNode } from "../types";
 
 const NO_FILTERS: FilterState = {
@@ -309,13 +310,17 @@ describe("treemap helpers", () => {
   });
 
   it("returns only selectable fund chips and filters grouped nodes by selection", () => {
+    const fundAColor = getColorForSymbol("FUND-A");
+    const eqtyAColor = getColorForSymbol("EQTY-A");
+    const fundCColor = getColorForSymbol("FUND-C");
+
     const groupedNodes: TreeMapNode[] = [
       {
         id: "fund-a-1-1",
         symbol: "FUND-A",
         name: "Synthetic Market Fund",
         value: 1000,
-        color: "#4E9999",
+        color: fundAColor,
         percentOfPortfolio: 25,
         x0: 0,
         y0: 0,
@@ -329,7 +334,7 @@ describe("treemap helpers", () => {
         symbol: "EQTY-A",
         name: "Synthetic Equity A",
         value: 200,
-        color: "#80BABA",
+        color: eqtyAColor,
         parentSymbol: "FUND-A",
         percentOfPortfolio: 5,
         x0: 0,
@@ -343,7 +348,7 @@ describe("treemap helpers", () => {
         symbol: "FUND-A",
         name: "Synthetic Market Fund",
         value: 400,
-        color: "#4E9999",
+        color: fundAColor,
         percentOfPortfolio: 10,
         x0: 0,
         y0: 200,
@@ -357,7 +362,7 @@ describe("treemap helpers", () => {
         symbol: "EQTY-A",
         name: "Synthetic Equity A",
         value: 500,
-        color: "#8B74AB",
+        color: eqtyAColor,
         percentOfPortfolio: 12.5,
         x0: 500,
         y0: 0,
@@ -371,7 +376,7 @@ describe("treemap helpers", () => {
         symbol: "FUND-C",
         name: "Synthetic Income Fund",
         value: 300,
-        color: "#C49A5C",
+        color: fundCColor,
         percentOfPortfolio: 7.5,
         x0: 800,
         y0: 0,
@@ -386,14 +391,14 @@ describe("treemap helpers", () => {
       {
         symbol: "FUND-A",
         name: "Synthetic Market Fund",
-        color: "#4E9999",
+        color: fundAColor,
         value: 1400,
         hasChildren: true,
       },
       {
         symbol: "FUND-C",
         name: "Synthetic Income Fund",
-        color: "#C49A5C",
+        color: fundCColor,
         value: 300,
         hasChildren: false,
       },
@@ -413,7 +418,7 @@ describe("treemap helpers", () => {
         symbol: "FUND-A",
         name: "Synthetic Market Fund",
         value: 1000,
-        color: "#4E9999",
+        color: getColorForSymbol("FUND-A"),
         percentOfPortfolio: 25,
         x0: 0,
         y0: 0,
@@ -427,7 +432,7 @@ describe("treemap helpers", () => {
         symbol: "EQTY-A",
         name: "Synthetic Equity A",
         value: 200,
-        color: "#80BABA",
+        color: getColorForSymbol("EQTY-A"),
         parentSymbol: "FUND-A",
         percentOfPortfolio: 5,
         x0: 0,
@@ -441,7 +446,7 @@ describe("treemap helpers", () => {
         symbol: "FUND-C",
         name: "Synthetic Income Fund",
         value: 300,
-        color: "#C49A5C",
+        color: getColorForSymbol("FUND-C"),
         percentOfPortfolio: 7.5,
         x0: 800,
         y0: 0,
