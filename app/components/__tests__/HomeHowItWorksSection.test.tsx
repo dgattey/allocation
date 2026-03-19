@@ -12,6 +12,7 @@ describe("HomeHowItWorksSection", () => {
     expect(screen.getByText(/published holdings/i)).toBeVisible();
     expect(screen.getByText(/matching tickers/i)).toBeVisible();
     expect(screen.getByText(/Your data stays in the browser/i)).toBeVisible();
-    expect(screen.getByText(/public quotes and fund facts/i)).toBeVisible();
+    expect(screen.getByText(/third-party public/i)).toBeVisible();
+    expect(screen.getByText(/market-data APIs/i)).toBeVisible();
   });
 });

@@ -25,8 +25,9 @@ export function HomeHowItWorksSection() {
             <span className="font-medium text-text-primary">
               Your data stays in the browser.
             </span>{" "}
-            We only reach out for public quotes and fund facts, keyed to the
-            tickers in your file—no brokerage login.
+            For live prices and fund breakdowns we call third-party public
+            market-data APIs—regular API requests keyed only to the tickers in
+            your file, not your Fidelity login.
           </p>
         </div>
       </div>
