@@ -125,7 +125,8 @@ export function FloatingToolbar({
               {hasFilters ? (
                 <ResetFiltersButton
                   onClick={onResetFilters}
-                  className="h-7 w-7 shrink-0 text-red-400/80 hover:text-red-300"
+                  label="Reset filters"
+                  className="h-7 shrink-0 px-2 text-red-400/80 hover:text-red-300"
                 />
               ) : (
                 <span className="h-4" aria-hidden="true" />
@@ -270,7 +271,8 @@ export function FloatingToolbar({
               {hasFilters && (
                 <ResetFiltersButton
                   onClick={onResetFilters}
-                  className="h-7 w-7 shrink-0 text-red-400/80 hover:text-red-300"
+                  label="Reset filters"
+                  className="h-7 shrink-0 px-2 text-red-400/80 hover:text-red-300"
                 />
               )}
 
