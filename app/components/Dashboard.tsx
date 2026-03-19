@@ -159,7 +159,13 @@ export function Dashboard({
       )}
     >
       {/* Sticky Header — consistent background, never changes when search bar docks */}
-      <header ref={headerRef} className="sticky-header sticky top-0 z-40">
+      <header
+        ref={headerRef}
+        className={cn(
+          "sticky-header sticky top-0 z-40",
+          isSearchDocked && "border-b-0"
+        )}
+      >
         <div
           className={cn(
             "max-w-[1400px] mx-auto py-5",
@@ -356,7 +362,7 @@ export function Dashboard({
             "transition-[background-color,backdrop-filter,box-shadow,top] duration-200 ease-out",
             "w-screen relative",
             isSearchDocked
-              ? "search-bar-docked z-50"
+              ? "search-bar-docked-unified z-50"
               : "bg-transparent z-40"
           )}
           style={{
