@@ -25,7 +25,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-8 md:px-6 md:py-10">
+    <main className="flex min-h-0 flex-1 flex-col px-4 py-8 md:px-6 md:py-10">
       <div className="mx-auto flex max-w-[1100px] flex-col gap-6 md:gap-8">
         <section className="grid grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_auto] items-start gap-x-3 gap-y-2 md:gap-x-5 md:gap-y-2">
           <div className="row-span-2 flex h-full min-h-0 items-start justify-start self-stretch">

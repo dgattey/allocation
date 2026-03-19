@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppShell } from "./components/AppShell";
 import { PendingUploadProvider } from "./contexts/PendingUploadContext";
 import "./globals.css";
 
@@ -21,8 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen antialiased">
-        <PendingUploadProvider>{children}</PendingUploadProvider>
+      <body className="antialiased">
+        <PendingUploadProvider>
+          <AppShell>{children}</AppShell>
+        </PendingUploadProvider>
       </body>
     </html>
   );
