@@ -24,6 +24,7 @@ import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
 import { FetchStatusBadge } from "./primitives/FetchStatusBadge";
+import { Tooltip } from "./primitives/Tooltip";
 import { cn } from "@/lib/utils";
 
 interface DashboardProps {
@@ -349,10 +350,7 @@ export function Dashboard({
                   : "flex flex-wrap items-end"
               )}
             >
-              <div
-                className="min-w-fit shrink-0"
-                title={`Market value: ${formatDollar(displayValue)}`}
-              >
+              <Tooltip content={formatDollar(displayValue)} className="min-w-fit shrink-0">
                 <AnimatedNumber
                   value={displayValue}
                   format={formatHeaderCurrency}
@@ -365,10 +363,10 @@ export function Dashboard({
                 <p className="mt-1 text-xs text-text-muted">
                   Current market value
                 </p>
-              </div>
-              <div
+              </Tooltip>
+              <Tooltip
+                content={`${formatDollar(displayGainLoss)} / ${displayGainLossPercent.toFixed(2)}%`}
                 className={cn("min-w-0", !isMobile && "self-end")}
-                title={`Unrealized gain: ${formatDollar(displayGainLoss)} / Return on cost basis: ${displayGainLossPercent.toFixed(2)}%`}
               >
                 <GainLoss
                   dollar={displayGainLoss}
@@ -380,7 +378,7 @@ export function Dashboard({
                 <p className="mt-1 text-xs text-text-muted">
                   Unrealized gain / return on cost basis
                 </p>
-              </div>
+              </Tooltip>
             </div>
           </div>
         </div>
