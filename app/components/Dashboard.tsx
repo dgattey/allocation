@@ -163,7 +163,7 @@ export function Dashboard({
         ref={headerRef}
         className={cn(
           "sticky-header sticky top-0 z-40 transition-[padding] duration-200 ease-out",
-          isSearchDocked && "pb-[3.5rem]"
+          isSearchDocked && "pb-[2.25rem]"
         )}
       >
         <div
