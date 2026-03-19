@@ -170,22 +170,7 @@ export function FloatingToolbar({
             />
 
             <div className="grid gap-3">
-              <ToolbarSection label="View">
-                <SegmentButton
-                  active={viewMode === "holdings"}
-                  onClick={() => onViewModeChange("holdings")}
-                >
-                  Holdings
-                </SegmentButton>
-                <SegmentButton
-                  active={viewMode === "positions"}
-                  onClick={() => onViewModeChange("positions")}
-                >
-                  Positions
-                </SegmentButton>
-              </ToolbarSection>
-
-              <ToolbarSection label="Treemap">
+              <ToolbarSection label="Graph">
                 <SegmentButton
                   active={treeMapGrouping === "fund"}
                   onClick={() => onTreeMapGroupingChange("fund")}
@@ -196,7 +181,22 @@ export function FloatingToolbar({
                   active={treeMapGrouping === "holding"}
                   onClick={() => onTreeMapGroupingChange("holding")}
                 >
-                  Flat
+                  Aggregated
+                </SegmentButton>
+              </ToolbarSection>
+
+              <ToolbarSection label="Table">
+                <SegmentButton
+                  active={viewMode === "positions"}
+                  onClick={() => onViewModeChange("positions")}
+                >
+                  By fund
+                </SegmentButton>
+                <SegmentButton
+                  active={viewMode === "holdings"}
+                  onClick={() => onViewModeChange("holdings")}
+                >
+                  Aggregated
                 </SegmentButton>
               </ToolbarSection>
 
@@ -217,22 +217,7 @@ export function FloatingToolbar({
         ) : (
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex shrink-0 flex-wrap items-center gap-3">
-              <ToolbarSection label="View">
-                <SegmentButton
-                  active={viewMode === "holdings"}
-                  onClick={() => onViewModeChange("holdings")}
-                >
-                  Holdings
-                </SegmentButton>
-                <SegmentButton
-                  active={viewMode === "positions"}
-                  onClick={() => onViewModeChange("positions")}
-                >
-                  Positions
-                </SegmentButton>
-              </ToolbarSection>
-
-              <ToolbarSection label="Treemap">
+              <ToolbarSection label="Graph">
                 <SegmentButton
                   active={treeMapGrouping === "fund"}
                   onClick={() => onTreeMapGroupingChange("fund")}
@@ -243,7 +228,22 @@ export function FloatingToolbar({
                   active={treeMapGrouping === "holding"}
                   onClick={() => onTreeMapGroupingChange("holding")}
                 >
-                  Flat
+                  Aggregated
+                </SegmentButton>
+              </ToolbarSection>
+
+              <ToolbarSection label="Table">
+                <SegmentButton
+                  active={viewMode === "positions"}
+                  onClick={() => onViewModeChange("positions")}
+                >
+                  By fund
+                </SegmentButton>
+                <SegmentButton
+                  active={viewMode === "holdings"}
+                  onClick={() => onViewModeChange("holdings")}
+                >
+                  Aggregated
                 </SegmentButton>
               </ToolbarSection>
 

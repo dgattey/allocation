@@ -92,7 +92,7 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
           )}
           <TooltipRow label="Value" value={formatDollar(node.value)} />
           <TooltipRow
-            label="Portfolio"
+            label="% Total"
             value={formatPercent(node.percentOfPortfolio)}
           />
 
@@ -106,23 +106,6 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
               />
             </div>
           )}
-
-          {node.fiftyTwoWeekHigh !== undefined &&
-            node.fiftyTwoWeekLow !== undefined &&
-            node.currentPrice !== undefined &&
-            node.fiftyTwoWeekHigh > 0 && (
-              <div className="pt-1">
-                <span className="text-xs text-text-muted block mb-1">
-                  52-Week Range
-                </span>
-                <FiftyTwoWeekRange
-                  low={node.fiftyTwoWeekLow}
-                  high={node.fiftyTwoWeekHigh}
-                  current={node.currentPrice}
-                  size="sm"
-                />
-              </div>
-            )}
 
           {node.parentName && (
             <div className="pt-1.5 mt-1.5 border-t border-border">
@@ -166,6 +149,23 @@ export function TreeMapTooltip({ node, mouseX, mouseY }: TreeMapTooltipProps) {
             </span>
           )}
         </div>
+
+        {node.fiftyTwoWeekHigh !== undefined &&
+          node.fiftyTwoWeekLow !== undefined &&
+          node.currentPrice !== undefined &&
+          node.fiftyTwoWeekHigh > 0 && (
+            <div className="pt-2 mt-1">
+              <span className="text-xs text-text-muted block mb-1">
+                52-Week Range
+              </span>
+              <FiftyTwoWeekRange
+                low={node.fiftyTwoWeekLow}
+                high={node.fiftyTwoWeekHigh}
+                current={node.currentPrice}
+                size="sm"
+              />
+            </div>
+          )}
       </div>
     </div>
   );
