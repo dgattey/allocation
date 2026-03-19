@@ -228,6 +228,7 @@ describe("Dashboard portfolio actions", () => {
     render(
       <Dashboard
         portfolioData={portfolioData}
+        portfolioName="Sample beta portfolio"
         filteredTreeMapNodes={[]}
         filteredRows={[]}
         isMobile={false}
@@ -238,7 +239,7 @@ describe("Dashboard portfolio actions", () => {
         onSort={vi.fn()}
         expandedRows={new Set()}
         onToggleExpand={vi.fn()}
-        onClearData={vi.fn()}
+        onBackToPicker={vi.fn()}
         isLoading={false}
         viewMode="holdings"
         onViewModeChange={vi.fn()}
@@ -259,7 +260,6 @@ describe("Dashboard portfolio actions", () => {
     expect(onFiltersChange).toHaveBeenCalledWith({
       investmentTypes: [],
       accounts: [],
-      searchQuery: "test",
       searchQuery: "",
     });
   });
