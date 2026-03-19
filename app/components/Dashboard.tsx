@@ -26,9 +26,6 @@ import { FetchStatusBadge } from "./primitives/FetchStatusBadge";
 import { cn } from "@/lib/utils";
 import { useIsStickyDocked } from "@/hooks/useIsStickyDocked";
 
-/** Height of GPU-accelerated extension when search bar docks (scaleY, no layout). 2.25rem ≈ 36px */
-const SEARCH_DOCK_EXTENSION_PX = 36;
-
 interface DashboardProps {
   portfolioData: PortfolioData;
   portfolioName: string;
@@ -161,8 +158,8 @@ export function Dashboard({
         isMobile ? "pb-8" : "pb-20"
       )}
     >
-      {/* Sticky Header — GPU-accelerated extension when search bar docks (scaleY, no layout) */}
-      <header ref={headerRef} className="sticky-header sticky top-0 z-40 relative">
+      {/* Sticky Header — consistent background, never changes when search bar docks */}
+      <header ref={headerRef} className="sticky-header sticky top-0 z-40">
         <div
           className={cn(
             "max-w-[1400px] mx-auto py-5",
@@ -292,15 +289,6 @@ export function Dashboard({
             </div>
           </div>
         </div>
-        {/* GPU-accelerated extension: scaleY avoids layout thrashing from padding animation */}
-        <div
-          className={cn(
-            "absolute bottom-0 left-0 right-0 search-bar-docked origin-top transition-transform duration-200 ease-out will-change-transform",
-            isSearchDocked ? "scale-y-100" : "scale-y-0"
-          )}
-          style={{ height: SEARCH_DOCK_EXTENSION_PX }}
-          aria-hidden
-        />
       </header>
 
       {/* TreeMap */}
@@ -376,8 +364,10 @@ export function Dashboard({
             marginRight: "calc(-50vw + 50%)",
             top:
               headerHeightPx > 0
-                ? headerHeightPx + (isSearchDocked ? SEARCH_DOCK_EXTENSION_PX : 0)
-                : (isMobile ? 92 : 112) + (isSearchDocked ? SEARCH_DOCK_EXTENSION_PX : 0),
+                ? headerHeightPx
+                : isMobile
+                  ? 92
+                  : 112,
           }}
         >
           <div
