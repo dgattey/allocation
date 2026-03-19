@@ -16,6 +16,7 @@ import type {
 import { hasActivePortfolioFilters } from "@/lib/portfolioFilters";
 import { getFilteredRows } from "@/lib/portfolioSelectors";
 import { formatDollar, formatHeaderCurrency } from "@/lib/utils";
+import { useTimeAgo } from "@/hooks/useTimeAgo";
 import { AnimatedNumber } from "./primitives/AnimatedNumber";
 import { GainLoss } from "./primitives/GainLoss";
 import { ResetFiltersButton } from "./primitives/ResetFiltersButton";
@@ -99,7 +100,7 @@ export function Dashboard({
   const searchQueryFromFilters = filters.searchQuery ?? "";
   const [searchInput, setSearchInput] = useState(searchQueryFromFilters);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  const timeAgo = useTimeAgo(lastUpdated);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(portfolioName);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -212,68 +213,83 @@ export function Dashboard({
             isMobile ? "px-4" : "px-6"
           )}
         >
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div
-              className={cn("min-w-0", enableIntroAnimation && "animate-soft-rise")}
-              style={{ "--enter-delay": "40ms" } as CSSProperties}
-            >
-              <div className="mb-2 flex min-w-0 items-center gap-3">
-                {isFiltered ? (
-                  <ResetFiltersButton
-                    onClick={onResetFilters}
-                    className={cn(
-                      "min-h-9 w-9 shrink-0 shadow-sm",
-                      enableIntroAnimation && "animate-scale-in",
-                      "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
-                      "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
-                    )}
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={onBackToPicker}
-                    className={cn(
-                      "inline-flex min-h-9 min-w-9 items-center justify-center rounded-full border border-border/70",
-                      "bg-surface text-text-primary shadow-sm transition-all duration-200 cursor-pointer hover:bg-surface-hover hover-lift press-down",
-                      enableIntroAnimation && "animate-scale-in"
-                    )}
-                    title="Back to portfolios"
-                    aria-label="Back to portfolios"
+          <div
+            className={cn(enableIntroAnimation && "animate-soft-rise")}
+            style={{ "--enter-delay": "40ms" } as CSSProperties}
+          >
+            <div className="mb-4 flex min-w-0 items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onBackToPicker}
+                  className={cn(
+                    "inline-flex min-h-9 min-w-9 items-center justify-center rounded-full border border-border/70",
+                    "bg-surface text-text-primary shadow-sm transition-all duration-200 cursor-pointer hover:bg-surface-hover hover-lift press-down",
+                    enableIntroAnimation && "animate-scale-in"
+                  )}
+                  title="Back to portfolios"
+                  aria-label="Back to portfolios"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="m15 18-6-6 6-6" />
-                    </svg>
-                  </button>
-                )}
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-text-muted">Your portfolio</div>
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 text-sm font-medium text-text-muted">Your portfolio</span>
+                    {activeSummary && (
+                      <span className="truncate text-sm text-text-muted">
+                        — {activeSummary.label}
+                      </span>
+                    )}
+                    {isFiltered && (
+                      <ResetFiltersButton
+                        onClick={onResetFilters}
+                        label="Reset filters"
+                        className={cn(
+                          "ml-1 h-7 shrink-0 px-2 shadow-sm",
+                          enableIntroAnimation && "animate-scale-in",
+                          "border border-red-200/70 bg-red-50 text-red-700 hover:bg-red-100",
+                          "dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
+                        )}
+                      />
+                    )}
+                  </div>
                   {isEditingName && portfolioId && onRenamePortfolio ? (
-                    <input
-                      ref={nameInputRef}
-                      type="text"
-                      value={editNameValue}
-                      onChange={(e) => setEditNameValue(e.target.value)}
-                      onBlur={handleCommitNameEdit}
-                      onKeyDown={handleNameKeyDown}
-                      className="mt-0.5 block w-full rounded-lg border border-border bg-surface px-2 py-1 text-sm font-semibold text-text-primary outline-none focus:border-accent md:text-base"
-                      aria-label="Rename portfolio"
-                    />
+                    <div className="-ml-1.5 inline-grid min-w-0 max-w-full">
+                      <span
+                        className="invisible col-start-1 row-start-1 whitespace-pre border border-transparent px-1.5 py-0.5 text-sm font-semibold md:text-base"
+                        aria-hidden="true"
+                      >
+                        {editNameValue || "\u00A0"}
+                      </span>
+                      <input
+                        ref={nameInputRef}
+                        type="text"
+                        value={editNameValue}
+                        onChange={(e) => setEditNameValue(e.target.value)}
+                        onBlur={handleCommitNameEdit}
+                        onKeyDown={handleNameKeyDown}
+                        className="col-start-1 row-start-1 block min-w-[4ch] rounded-lg border border-border bg-surface px-1.5 py-0.5 text-sm font-semibold text-text-primary outline-none focus:border-accent md:text-base"
+                        aria-label="Rename portfolio"
+                      />
+                    </div>
                   ) : (
                     <button
                       type="button"
                       onClick={portfolioId && onRenamePortfolio ? handleStartEditName : undefined}
                       className={cn(
-                        "flex min-w-0 items-center gap-2 text-left",
+                        "-ml-1.5 flex min-w-0 items-center gap-2 rounded-lg border border-transparent px-1.5 py-0.5 text-left",
                         portfolioId && onRenamePortfolio && "cursor-pointer hover:opacity-80"
                       )}
                       disabled={!portfolioId || !onRenamePortfolio}
@@ -302,78 +318,109 @@ export function Dashboard({
                       )}
                     </button>
                   )}
-                  {activeSummary && (
-                    <p className="truncate text-xs text-text-muted">
-                      {activeSummary.label}
-                    </p>
-                  )}
                 </div>
               </div>
 
               <div
                 className={cn(
-                  "gap-x-6 gap-y-3",
-                  isMobile
-                    ? "flex flex-col items-start"
-                    : "flex flex-wrap items-end"
+                  "flex shrink-0 flex-col items-end gap-1.5",
+                  enableIntroAnimation && "animate-soft-rise"
                 )}
+                style={{ "--enter-delay": "120ms" } as CSSProperties}
               >
-                <div
-                  className="min-w-fit shrink-0"
-                  title={`Market value: ${formatDollar(displayValue)}`}
-                >
-                  <AnimatedNumber
-                    value={displayValue}
-                    format={formatHeaderCurrency}
-                    animate={enableValueAnimations}
+                <div className="flex items-center gap-1.5 whitespace-nowrap text-xs text-text-muted">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Data fetched {timeAgo}
+                </div>
+                {onRefresh && (
+                  <button
+                    type="button"
+                    onClick={onRefresh}
+                    disabled={isRefreshing}
+                    aria-label="Refresh data"
+                    title="Refresh quotes and holdings"
                     className={cn(
-                      "font-bold text-text-primary whitespace-nowrap",
-                      isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
+                      "inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-surface px-3 py-1.5",
+                      "text-xs font-medium text-text-primary shadow-sm transition-all duration-200 cursor-pointer",
+                      "hover:bg-surface-hover hover-lift press-down",
+                      "disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={cn("shrink-0", isRefreshing && "animate-spin")}
+                    >
+                      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                      <path d="M3 3v5h5" />
+                      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                      <path d="M16 21h5v-5" />
+                    </svg>
+                    Refresh
+                  </button>
+                )}
+                {fetchError && (
+                  <FetchStatusBadge
+                    error={fetchError}
+                    hasData
+                    className="max-w-full"
                   />
-                  <p className="mt-1 text-xs text-text-muted">
-                    Current market value
-                  </p>
-                </div>
-                <div
-                  className={cn("min-w-0", !isMobile && "self-end")}
-                  title={`Unrealized gain: ${formatDollar(displayGainLoss)} / Return on cost basis: ${displayGainLossPercent.toFixed(2)}%`}
-                >
-                  <GainLoss
-                    dollar={displayGainLoss}
-                    percent={displayGainLossPercent}
-                    size={isMobile ? "sm" : "md"}
-                    className={cn(isMobile ? "text-lg" : "text-xl md:text-2xl")}
-                    formatDollarValue={formatHeaderCurrency}
-                  />
-                  <p className="mt-1 text-xs text-text-muted">
-                    Unrealized gain / return on cost basis
-                  </p>
-                </div>
+                )}
+                {isLoading && (
+                  <div className="flex items-center gap-2 text-xs text-text-muted">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                    Loading...
+                  </div>
+                )}
               </div>
             </div>
 
             <div
               className={cn(
-                "flex shrink-0 flex-col items-start justify-center gap-2 md:items-end",
-                enableIntroAnimation && "animate-soft-rise"
+                "gap-x-6 gap-y-3",
+                isMobile
+                  ? "flex flex-col items-start"
+                  : "flex flex-wrap items-end"
               )}
-              style={{ "--enter-delay": "120ms" } as CSSProperties}
             >
-              {fetchError && (
-                <FetchStatusBadge
-                  error={fetchError}
-                  hasData
-                  className="max-w-full self-stretch md:self-auto"
+              <div
+                className="min-w-fit shrink-0"
+                title={`Market value: ${formatDollar(displayValue)}`}
+              >
+                <AnimatedNumber
+                  value={displayValue}
+                  format={formatHeaderCurrency}
+                  animate={enableValueAnimations}
+                  className={cn(
+                    "font-bold text-text-primary whitespace-nowrap",
+                    isMobile ? "text-[clamp(2rem,10vw,2.6rem)]" : "text-3xl md:text-5xl"
+                  )}
                 />
-              )}
-
-              {isLoading && (
-                <div className="flex items-center gap-2 text-xs text-text-muted">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                  Loading...
-                </div>
-              )}
+                <p className="mt-1 text-xs text-text-muted">
+                  Current market value
+                </p>
+              </div>
+              <div
+                className={cn("min-w-0", !isMobile && "self-end")}
+                title={`Unrealized gain: ${formatDollar(displayGainLoss)} / Return on cost basis: ${displayGainLossPercent.toFixed(2)}%`}
+              >
+                <GainLoss
+                  dollar={displayGainLoss}
+                  percent={displayGainLossPercent}
+                  size={isMobile ? "sm" : "md"}
+                  className={cn(isMobile ? "text-lg" : "text-xl md:text-2xl")}
+                  formatDollarValue={formatHeaderCurrency}
+                />
+                <p className="mt-1 text-xs text-text-muted">
+                  Unrealized gain / return on cost basis
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -409,9 +456,6 @@ export function Dashboard({
             summary={summary}
             filters={filters}
             onFiltersChange={onFiltersChange}
-            lastUpdated={lastUpdated}
-            onRefresh={onRefresh ?? (() => {})}
-            isRefreshing={isRefreshing}
             viewMode={viewMode}
             onViewModeChange={onViewModeChange}
             treeMapGrouping={treeMapGrouping}
@@ -538,9 +582,6 @@ export function Dashboard({
           summary={summary}
           filters={filters}
           onFiltersChange={onFiltersChange}
-          lastUpdated={lastUpdated}
-          onRefresh={onRefresh ?? (() => {})}
-          isRefreshing={isRefreshing}
           viewMode={viewMode}
           onViewModeChange={onViewModeChange}
           treeMapGrouping={treeMapGrouping}

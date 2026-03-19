@@ -17,9 +17,6 @@ function makeProps(): ComponentProps<typeof FloatingToolbar> {
       accounts: [],
     },
     onFiltersChange: vi.fn(),
-    lastUpdated: new Date().toISOString(),
-    onRefresh: vi.fn(),
-    isRefreshing: false,
     viewMode: "holdings" as const,
     onViewModeChange: vi.fn(),
     treeMapGrouping: "fund" as const,
@@ -52,7 +49,8 @@ describe("FloatingToolbar", () => {
     const props = makeProps();
     render(<FloatingToolbar {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Flat" }));
+    const aggregatedButtons = screen.getAllByRole("button", { name: "Aggregated" });
+    fireEvent.click(aggregatedButtons[0]);
     expect(props.onTreeMapGroupingChange).toHaveBeenCalledWith("holding");
   });
 
@@ -68,7 +66,7 @@ describe("FloatingToolbar", () => {
 
     const resetButton = screen.getByRole("button", { name: "Reset filters" });
     expect(resetButton).toHaveAttribute("title", "Reset all filters");
-    expect(screen.queryByText("Reset filters")).not.toBeInTheDocument();
+    expect(screen.getByText("Reset filters")).toBeInTheDocument();
 
     fireEvent.click(resetButton);
 
@@ -184,10 +182,10 @@ describe("FloatingToolbar", () => {
     expect(container.querySelector(".fixed")).not.toBeInTheDocument();
 
     const resetButton = screen.getByRole("button", { name: "Reset filters" });
-    const holdingsButton = screen.getByRole("button", { name: "Holdings" });
+    const byFundButtons = screen.getAllByRole("button", { name: "By fund" });
 
     expect(
-      resetButton.compareDocumentPosition(holdingsButton) &
+      resetButton.compareDocumentPosition(byFundButtons[0]) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
     expect(screen.getByText("Type")).toBeInTheDocument();

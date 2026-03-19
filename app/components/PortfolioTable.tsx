@@ -29,7 +29,7 @@ const SORTABLE_COLUMNS: {
   minWidthClass?: string;
 }[] = [
   { key: "totalValue", label: "Value", align: "right" },
-  { key: "percentOfPortfolio", label: "% Port", align: "right" },
+  { key: "percentOfPortfolio", label: "% Total", align: "right" },
   { key: "currentPrice", label: "Price", align: "right" },
   { key: "totalGainLossDollar", label: "$ Change", align: "right" },
   { key: "totalGainLossPercent", label: "% Change", align: "right" },
@@ -235,7 +235,7 @@ function MobileRowCard({
             className="text-sm font-semibold text-text-primary"
           />
         </MetricCell>
-        <MetricCell label="% Port">
+        <MetricCell label="% Total">
           <span className="text-sm text-text-primary tabular-nums">
             {formatPercent(row.percentOfPortfolio)}
           </span>
@@ -305,7 +305,7 @@ function MobileRowCard({
                     {formatPercent(source.percentOfSource)}
                   </span>
                 </MetricCell>
-                <MetricCell label="% Port">
+                <MetricCell label="% Total">
                   <span className="text-xs text-text-primary tabular-nums">
                     {formatPercent(source.percentOfPortfolio)}
                   </span>
