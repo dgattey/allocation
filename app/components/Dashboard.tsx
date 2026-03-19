@@ -97,6 +97,7 @@ export function Dashboard({
 }: DashboardProps) {
   const { summary, lastUpdated } = portfolioData;
   const timeAgo = useTimeAgo(lastUpdated);
+  const [hoveredTooltip, setHoveredTooltip] = useState<"value" | "gain" | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(portfolioName);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -349,7 +350,11 @@ export function Dashboard({
                   : "flex flex-wrap items-end"
               )}
             >
-              <div className="group relative min-w-fit shrink-0">
+              <div
+                className="relative min-w-fit shrink-0"
+                onMouseEnter={() => setHoveredTooltip("value")}
+                onMouseLeave={() => setHoveredTooltip(null)}
+              >
                 <AnimatedNumber
                   value={displayValue}
                   format={formatHeaderCurrency}
@@ -362,19 +367,20 @@ export function Dashboard({
                 <p className="mt-1 text-xs text-text-muted">
                   Current market value
                 </p>
-                <div
-                  role="tooltip"
-                  className={cn(
-                    "pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5",
-                    "text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]",
-                    "opacity-0 translate-y-1 transition-all duration-150",
-                    "group-hover:translate-y-0 group-hover:opacity-100"
-                  )}
-                >
-                  {formatDollar(displayValue)}
-                </div>
+                {hoveredTooltip === "value" && (
+                  <div
+                    role="tooltip"
+                    className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]"
+                  >
+                    {formatDollar(displayValue)}
+                  </div>
+                )}
               </div>
-              <div className={cn("group relative min-w-0", !isMobile && "self-end")}>
+              <div
+                className={cn("relative min-w-0", !isMobile && "self-end")}
+                onMouseEnter={() => setHoveredTooltip("gain")}
+                onMouseLeave={() => setHoveredTooltip(null)}
+              >
                 <GainLoss
                   dollar={displayGainLoss}
                   percent={displayGainLossPercent}
@@ -385,17 +391,14 @@ export function Dashboard({
                 <p className="mt-1 text-xs text-text-muted">
                   Unrealized gain / return on cost basis
                 </p>
-                <div
-                  role="tooltip"
-                  className={cn(
-                    "pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5",
-                    "text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]",
-                    "opacity-0 translate-y-1 transition-all duration-150",
-                    "group-hover:translate-y-0 group-hover:opacity-100"
-                  )}
-                >
-                  {formatDollar(displayGainLoss)} / {displayGainLossPercent.toFixed(2)}%
-                </div>
+                {hoveredTooltip === "gain" && (
+                  <div
+                    role="tooltip"
+                    className="pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5 text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]"
+                  >
+                    {formatDollar(displayGainLoss)} / {displayGainLossPercent.toFixed(2)}%
+                  </div>
+                )}
               </div>
             </div>
           </div>
