@@ -13,9 +13,14 @@ export function HomeHowItWorksSection() {
         </p>
         <div className="mt-3 space-y-2 text-sm leading-6 text-text-muted">
           <p>
-            This is a read-only look at a Fidelity export: understand how your
-            money is spread, what drives the totals, and—when it&apos;s
-            available—how your funds are actually invested.
+            <span className="font-medium text-text-primary">
+              We split fund and ETF lines into published top holdings, then total
+              how much you hold of each ticker across every wrapper.
+            </span>{" "}
+            Read-only: a deeper analytical layer on the same Fidelity
+            export—fund sleeves unpacked and overlapping tickers summed so
+            concentration is obvious, not something you reconstruct from
+            positions alone.
           </p>
           <p>
             <span className="font-medium text-text-primary">
