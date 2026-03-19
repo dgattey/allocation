@@ -108,6 +108,21 @@ export function touchStoredPortfolio(portfolioId: string): void {
   persistStore(store);
 }
 
+export function updateStoredPortfolioName(
+  portfolioId: string,
+  name: string
+): void {
+  const store = readStore();
+  const portfolio = findPortfolioById(store, portfolioId);
+
+  if (!portfolio) {
+    return;
+  }
+
+  portfolio.name = name.trim() || createPortfolioName(portfolio.sourceFileName);
+  persistStore(store);
+}
+
 export function removeStoredPortfolio(portfolioId: string): string | null {
   const store = readStore();
   const persisted = persistStore({

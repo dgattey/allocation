@@ -6,6 +6,7 @@ import {
   listStoredPortfolios,
   removeStoredPortfolio,
   saveUploadedPortfolio,
+  updateStoredPortfolioName,
 } from "@/lib/storage";
 import type { StoredPortfolioSummary } from "@/lib/types";
 
@@ -82,6 +83,14 @@ export function usePortfolioLibrary() {
     [refreshLibrary]
   );
 
+  const renamePortfolio = useCallback(
+    (portfolioId: string, name: string) => {
+      updateStoredPortfolioName(portfolioId, name);
+      refreshLibrary();
+    },
+    [refreshLibrary]
+  );
+
   return {
     portfolios,
     isUploading,
@@ -90,5 +99,6 @@ export function usePortfolioLibrary() {
     refreshLibrary,
     uploadFiles,
     removePortfolioById,
+    renamePortfolio,
   };
 }

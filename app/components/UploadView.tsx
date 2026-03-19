@@ -45,7 +45,6 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
 
   return (
     <div
-      className="animate-soft-rise"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -61,6 +60,10 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">
               Add Fidelity exports to the picker.
+            </p>
+            <p className="mt-3 max-w-2xl text-xs leading-5 text-text-muted">
+              Uploads stay on your device only. The only data fetched from the
+              internet is publicly available fund data, identified by symbol.
             </p>
           </div>
 
@@ -85,7 +88,7 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
           </div>
 
           {error && (
-            <div className="rounded-2xl border border-negative/15 bg-negative-bg px-4 py-3 text-sm text-negative animate-slide-down">
+            <div className="rounded-2xl border border-negative/15 bg-negative-bg px-4 py-3 text-sm text-negative">
               {error}
             </div>
           )}
@@ -104,9 +107,6 @@ export function UploadView({ onFilesSelect, error, isLoading }: UploadViewProps)
                 : "border-border hover:border-accent/50 hover:bg-surface-hover/80",
               isLoading && "opacity-60 pointer-events-none"
             )}
-            style={
-              isDragOver ? { animation: "pulse-border 1.5s ease-in-out infinite" } : undefined
-            }
           >
             {isLoading ? (
               <>
