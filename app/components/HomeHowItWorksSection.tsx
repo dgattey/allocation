@@ -13,17 +13,16 @@ export function HomeHowItWorksSection() {
         </p>
         <div className="mt-3 space-y-2 text-sm leading-6 text-text-muted">
           <p>
-            Drop a Fidelity positions export and we turn it into a treemap and
-            sortable table. Fund tiles can expand into public holdings when data
-            exists.
+            This is a read-only look at a Fidelity export: understand how your
+            money is spread, what drives the totals, and—when it&apos;s
+            available—how your funds are actually invested.
           </p>
           <p>
-            Quotes and fund facts are fetched by symbol—no brokerage login, no
-            extra credentials.
-          </p>
-          <p className="text-xs leading-5 md:text-sm md:leading-6">
-            Your CSVs and saved portfolios stay in this browser. Outbound
-            requests only ask for public market and fund data keyed by symbol.
+            <span className="font-medium text-text-primary">
+              Your data stays in the browser.
+            </span>{" "}
+            We only reach out for public quotes and fund facts, keyed to the
+            tickers in your file—no brokerage login.
           </p>
         </div>
       </div>

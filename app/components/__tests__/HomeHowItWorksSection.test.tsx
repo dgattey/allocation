@@ -6,8 +6,8 @@ describe("HomeHowItWorksSection", () => {
   it("shows how-it-works copy and privacy basics", () => {
     render(<HomeHowItWorksSection />);
     expect(screen.getByText("How it works")).toBeInTheDocument();
-    expect(screen.getByText(/treemap/i)).toBeVisible();
-    expect(screen.getByText(/no brokerage login/i)).toBeVisible();
-    expect(screen.getByText(/this browser/i)).toBeVisible();
+    expect(screen.getByText(/read-only look at a Fidelity export/i)).toBeVisible();
+    expect(screen.getByText(/Your data stays in the browser/i)).toBeVisible();
+    expect(screen.getByText(/public quotes and fund facts/i)).toBeVisible();
   });
 });
