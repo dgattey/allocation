@@ -24,7 +24,6 @@ import { TreeMap } from "./TreeMap";
 import { PortfolioTable } from "./PortfolioTable";
 import { FloatingToolbar } from "./FloatingToolbar";
 import { FetchStatusBadge } from "./primitives/FetchStatusBadge";
-import { Tooltip } from "./primitives/Tooltip";
 import { cn } from "@/lib/utils";
 
 interface DashboardProps {
@@ -350,7 +349,7 @@ export function Dashboard({
                   : "flex flex-wrap items-end"
               )}
             >
-              <Tooltip content={formatDollar(displayValue)} className="min-w-fit shrink-0">
+              <div className="group relative min-w-fit shrink-0">
                 <AnimatedNumber
                   value={displayValue}
                   format={formatHeaderCurrency}
@@ -363,11 +362,19 @@ export function Dashboard({
                 <p className="mt-1 text-xs text-text-muted">
                   Current market value
                 </p>
-              </Tooltip>
-              <Tooltip
-                content={`${formatDollar(displayGainLoss)} / ${displayGainLossPercent.toFixed(2)}%`}
-                className={cn("min-w-0", !isMobile && "self-end")}
-              >
+                <div
+                  role="tooltip"
+                  className={cn(
+                    "pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5",
+                    "text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]",
+                    "opacity-0 translate-y-1 transition-all duration-150",
+                    "group-hover:translate-y-0 group-hover:opacity-100"
+                  )}
+                >
+                  {formatDollar(displayValue)}
+                </div>
+              </div>
+              <div className={cn("group relative min-w-0", !isMobile && "self-end")}>
                 <GainLoss
                   dollar={displayGainLoss}
                   percent={displayGainLossPercent}
@@ -378,7 +385,18 @@ export function Dashboard({
                 <p className="mt-1 text-xs text-text-muted">
                   Unrealized gain / return on cost basis
                 </p>
-              </Tooltip>
+                <div
+                  role="tooltip"
+                  className={cn(
+                    "pointer-events-none absolute left-0 top-full z-50 mt-1.5 w-max rounded-lg border border-border/80 bg-surface px-3 py-1.5",
+                    "text-left text-xs leading-5 text-text-primary shadow-[var(--shadow-lg)]",
+                    "opacity-0 translate-y-1 transition-all duration-150",
+                    "group-hover:translate-y-0 group-hover:opacity-100"
+                  )}
+                >
+                  {formatDollar(displayGainLoss)} / {displayGainLossPercent.toFixed(2)}%
+                </div>
+              </div>
             </div>
           </div>
         </div>
