@@ -190,7 +190,7 @@ function PortfolioTile({
       ) : (
         <Link
           href={`/portfolio/${portfolio.id}`}
-          className="relative block min-h-full cursor-pointer after:absolute after:inset-0 after:content-['']"
+          className="block min-h-full cursor-pointer after:absolute after:inset-0 after:content-['']"
           aria-label={`Open ${portfolio.name}`}
         >
           {cardContent}

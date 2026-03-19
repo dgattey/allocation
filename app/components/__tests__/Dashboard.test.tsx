@@ -161,10 +161,11 @@ describe("Dashboard portfolio actions", () => {
     );
 
     expect(screen.getByText("Sample beta portfolio")).toBeInTheDocument();
-    expect(screen.getByText("2 funds selected")).toBeInTheDocument();
+    expect(screen.getByText(/2 funds selected/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /back to portfolios/i })).toBeInTheDocument();
     const resetButton = screen.getByRole("button", { name: "Reset filters" });
     expect(resetButton).toHaveAttribute("title", "Reset all filters");
-    expect(screen.queryByRole("button", { name: /back to portfolios/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Reset filters")).toBeInTheDocument();
     fireEvent.click(resetButton);
     expect(onResetFilters).toHaveBeenCalledTimes(1);
   });

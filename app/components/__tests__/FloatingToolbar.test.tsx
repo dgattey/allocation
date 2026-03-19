@@ -17,9 +17,6 @@ function makeProps(): ComponentProps<typeof FloatingToolbar> {
       accounts: [],
     },
     onFiltersChange: vi.fn(),
-    lastUpdated: new Date().toISOString(),
-    onRefresh: vi.fn(),
-    isRefreshing: false,
     viewMode: "holdings" as const,
     onViewModeChange: vi.fn(),
     treeMapGrouping: "fund" as const,
@@ -68,7 +65,7 @@ describe("FloatingToolbar", () => {
 
     const resetButton = screen.getByRole("button", { name: "Reset filters" });
     expect(resetButton).toHaveAttribute("title", "Reset all filters");
-    expect(screen.queryByText("Reset filters")).not.toBeInTheDocument();
+    expect(screen.getByText("Reset filters")).toBeInTheDocument();
 
     fireEvent.click(resetButton);
 
