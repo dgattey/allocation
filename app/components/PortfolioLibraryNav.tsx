@@ -1,14 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect, type CSSProperties } from "react";
 import Link from "next/link";
 import { formatDollar, formatDate } from "@/lib/utils";
 import type { StoredPortfolioSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
-  applyPortfolioTileViewTransitionNames,
-  clearPortfolioViewTransitionReturn,
-  peekPortfolioViewTransitionReturn,
   portfolioViewTransitionShell,
   portfolioViewTransitionTitle,
   portfolioViewTransitionValue,
@@ -75,21 +72,22 @@ function PortfolioTile({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(portfolio.name);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const tileRootRef = useRef<HTMLDivElement | null>(null);
-  const titleRef = useRef<HTMLParagraphElement | null>(null);
-  const valueRef = useRef<HTMLSpanElement | null>(null);
-  const [fromReturnVt, setFromReturnVt] = useState(false);
 
-  useLayoutEffect(() => {
-    if (!peekPortfolioViewTransitionReturn(portfolio.id)) {
-      return;
-    }
-    clearPortfolioViewTransitionReturn();
-    // Session marker is written right before router.back(); promote to state so the
-    // home tree includes matching view-transition-name values before paint.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot read from sessionStorage for View Transitions
-    setFromReturnVt(true);
-  }, [portfolio.id]);
+  const vtShellStyle = !isEditing
+    ? ({
+        viewTransitionName: portfolioViewTransitionShell(portfolio.id),
+      } as CSSProperties)
+    : undefined;
+  const vtTitleStyle = !isEditing
+    ? ({
+        viewTransitionName: portfolioViewTransitionTitle(portfolio.id),
+      } as CSSProperties)
+    : undefined;
+  const vtValueStyle = !isEditing
+    ? ({
+        viewTransitionName: portfolioViewTransitionValue(portfolio.id),
+      } as CSSProperties)
+    : undefined;
 
   useEffect(() => {
     if (isEditing) {
@@ -128,24 +126,6 @@ function PortfolioTile({
     onRemove?.(portfolio.id);
   }
 
-  function handleOpenClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    if (
-      e.button !== 0 ||
-      e.metaKey ||
-      e.ctrlKey ||
-      e.shiftKey ||
-      e.altKey
-    ) {
-      return;
-    }
-    applyPortfolioTileViewTransitionNames(
-      portfolio.id,
-      tileRootRef.current,
-      titleRef.current,
-      valueRef.current
-    );
-  }
-
   const cardContent = (
     <>
       <div className="flex items-start justify-between gap-3">
@@ -165,13 +145,8 @@ function PortfolioTile({
           ) : (
             <div className="flex items-center gap-2 min-w-0">
               <p
-                ref={titleRef}
                 className="truncate text-sm font-semibold text-text-primary"
-                style={
-                  fromReturnVt
-                    ? { viewTransitionName: portfolioViewTransitionTitle(portfolio.id) }
-                    : undefined
-                }
+                style={vtTitleStyle}
               >
                 {portfolio.name}
               </p>
@@ -213,14 +188,7 @@ function PortfolioTile({
 
       <div className="mt-4 flex items-center justify-between gap-2 text-xs text-text-muted">
         <span>{portfolio.positionCount} positions</span>
-        <span
-          ref={valueRef}
-          style={
-            fromReturnVt
-              ? { viewTransitionName: portfolioViewTransitionValue(portfolio.id) }
-              : undefined
-          }
-        >
+        <span style={vtValueStyle}>
           {typeof portfolio.totalValue === "number"
             ? formatDollar(portfolio.totalValue)
             : "Needs refresh"}
@@ -231,25 +199,19 @@ function PortfolioTile({
 
   return (
     <div
-      ref={tileRootRef}
       className={cn(
         "group relative rounded-2xl border p-4 transition-colors",
         isActive
           ? "border-accent bg-accent-bg/60"
           : "border-border/70 bg-bg/70 hover:border-accent/40 hover:bg-surface-hover/60"
       )}
-      style={
-        fromReturnVt
-          ? { viewTransitionName: portfolioViewTransitionShell(portfolio.id) }
-          : undefined
-      }
+      style={vtShellStyle}
     >
       {isEditing ? (
         <div className="block min-h-full">{cardContent}</div>
       ) : (
         <Link
           href={`/portfolio/${portfolio.id}`}
-          onClick={handleOpenClick}
           className="block min-h-full cursor-pointer after:absolute after:inset-0 after:content-['']"
           aria-label={`Open ${portfolio.name}`}
         >

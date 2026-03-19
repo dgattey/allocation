@@ -20,7 +20,6 @@ import {
   DESKTOP_TREE_MAP_LAYOUT,
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
-import { markPortfolioViewTransitionReturn } from "@/lib/portfolioViewTransition";
 import { updateStoredPortfolioName } from "@/lib/storage";
 import { parsePortfolioUrlState } from "@/lib/urlFilters";
 
@@ -157,7 +156,6 @@ export function PortfolioDetailClient({
         expandedRows={viewState.expandedRows}
         onToggleExpand={viewState.toggleExpand}
         onBackToPicker={() => {
-          markPortfolioViewTransitionReturn(portfolioId);
           if (typeof window !== "undefined" && window.history.length > 1) {
             router.back();
           } else {
