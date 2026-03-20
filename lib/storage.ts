@@ -3,13 +3,17 @@ import type {
   PortfolioData,
   StoredPortfolioSummary,
 } from "./types";
+import type { PortfolioMetaRow, PortfolioPayloadRow } from "./portfolioIdb";
 import {
   deletePortfolioDatabaseForTests,
-  idbApplyPortfolioDelta,
+  idbApplyPortfolioSplitDelta,
   idbClearAllPortfolios,
-  idbGetAllPortfolios,
-  idbGetPortfolio,
-  idbPutPortfolio,
+  idbGetAllPortfolioMeta,
+  idbGetAllPortfolioPayload,
+  idbGetPortfolioMeta,
+  idbGetPortfolioPayload,
+  idbMutatePortfolioMeta,
+  idbMutatePortfolioRows,
 } from "./portfolioIdb";
 
 const MAX_STORED_PORTFOLIOS = 8;
@@ -26,25 +30,76 @@ interface PortfolioStore {
   portfolios: StoredPortfolioRecord[];
 }
 
+function toMetaRow(p: StoredPortfolioRecord): PortfolioMetaRow {
+  return {
+    id: p.id,
+    name: p.name,
+    sourceFileName: p.sourceFileName,
+    uploadedAt: p.uploadedAt,
+    lastViewedAt: p.lastViewedAt,
+    positionCount: p.positions.length,
+    totalValue: p.totalValue,
+  };
+}
+
+function toPayloadRow(p: StoredPortfolioRecord): PortfolioPayloadRow {
+  return {
+    id: p.id,
+    positions: p.positions,
+    portfolioData: p.portfolioData,
+  };
+}
+
+function mergePortfolioRow(
+  meta: PortfolioMetaRow,
+  payload: PortfolioPayloadRow
+): StoredPortfolioRecord {
+  const positionCount = payload.positions.length;
+  return {
+    id: meta.id,
+    name: meta.name,
+    sourceFileName: meta.sourceFileName,
+    uploadedAt: meta.uploadedAt,
+    lastViewedAt: meta.lastViewedAt,
+    positionCount,
+    totalValue: meta.totalValue,
+    positions: payload.positions,
+    portfolioData: payload.portfolioData,
+  };
+}
+
 async function loadStoreFromIdb(): Promise<PortfolioStore> {
   if (typeof window === "undefined") {
     return createEmptyStore();
   }
-  const rawRows = await idbGetAllPortfolios();
-  const portfolios = rawRows
-    .map((row) => normalizePortfolio(row))
-    .filter((p): p is StoredPortfolioRecord => p !== null);
+  const [metas, payloads] = await Promise.all([
+    idbGetAllPortfolioMeta(),
+    idbGetAllPortfolioPayload(),
+  ]);
+  const payloadById = new Map(payloads.map((p) => [p.id, p]));
+  const portfolios: StoredPortfolioRecord[] = [];
+  for (const m of metas) {
+    const p = payloadById.get(m.id);
+    if (!p) {
+      continue;
+    }
+    portfolios.push(mergePortfolioRow(m, p));
+  }
   return pruneStore({
     version: STORE_VERSION,
     portfolios,
   });
 }
 
-function snapshotById(portfolios: StoredPortfolioRecord[]): Map<string, string> {
-  return new Map(portfolios.map((p) => [p.id, JSON.stringify(p)]));
+function snapshotMetaById(portfolios: StoredPortfolioRecord[]): Map<string, string> {
+  return new Map(portfolios.map((p) => [p.id, JSON.stringify(toMetaRow(p))]));
 }
 
-/** Persists only deleted rows and rows whose pruned payload changed vs `before`. */
+function snapshotPayloadById(portfolios: StoredPortfolioRecord[]): Map<string, string> {
+  return new Map(portfolios.map((p) => [p.id, JSON.stringify(toPayloadRow(p))]));
+}
+
+/** Persists deletes plus meta/payload rows that changed vs `before`. */
 async function persistStoreDelta(
   before: PortfolioStore,
   next: PortfolioStore
@@ -53,24 +108,31 @@ async function persistStoreDelta(
     return next;
   }
 
-  const prevSerialized = snapshotById(before.portfolios);
+  const prevMeta = snapshotMetaById(before.portfolios);
+  const prevPayload = snapshotPayloadById(before.portfolios);
   const nextIds = new Set(next.portfolios.map((p) => p.id));
 
   const deleteIds: string[] = [];
-  for (const id of prevSerialized.keys()) {
+  for (const id of prevMeta.keys()) {
     if (!nextIds.has(id)) {
       deleteIds.push(id);
     }
   }
 
-  const recordsToPut: StoredPortfolioRecord[] = [];
+  const metasToPut: PortfolioMetaRow[] = [];
+  const payloadsToPut: PortfolioPayloadRow[] = [];
   for (const p of next.portfolios) {
-    if (prevSerialized.get(p.id) !== JSON.stringify(p)) {
-      recordsToPut.push(p);
+    const m = toMetaRow(p);
+    const pl = toPayloadRow(p);
+    if (prevMeta.get(p.id) !== JSON.stringify(m)) {
+      metasToPut.push(m);
+    }
+    if (prevPayload.get(p.id) !== JSON.stringify(pl)) {
+      payloadsToPut.push(pl);
     }
   }
 
-  await idbApplyPortfolioDelta(deleteIds, recordsToPut);
+  await idbApplyPortfolioSplitDelta(deleteIds, metasToPut, payloadsToPut);
   return next;
 }
 
@@ -121,13 +183,16 @@ export async function listStoredPortfolios(): Promise<StoredPortfolioSummary[]> 
   if (typeof window === "undefined") {
     return [];
   }
-  const store = await loadStoreFromIdb();
-  return store.portfolios.map(toSummary);
+  const metas = await idbGetAllPortfolioMeta();
+  return sortMetas(metas).map(toSummaryFromMeta);
 }
 
 export async function getMostRecentPortfolioId(): Promise<string | null> {
-  const list = await listStoredPortfolios();
-  return list[0]?.id ?? null;
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const metas = await idbGetAllPortfolioMeta();
+  return sortMetas(metas)[0]?.id ?? null;
 }
 
 export async function getStoredPortfolioSummary(
@@ -136,9 +201,8 @@ export async function getStoredPortfolioSummary(
   if (typeof window === "undefined" || !portfolioId) {
     return null;
   }
-  const raw = await idbGetPortfolio(portfolioId);
-  const portfolio = normalizePortfolio(raw);
-  return portfolio ? toSummary(portfolio) : null;
+  const meta = await idbGetPortfolioMeta(portfolioId);
+  return meta ? toSummaryFromMeta(meta) : null;
 }
 
 export async function loadStoredPortfolio(
@@ -147,17 +211,22 @@ export async function loadStoredPortfolio(
   if (typeof window === "undefined" || !portfolioId) {
     return null;
   }
-  const store = await loadStoreFromIdb();
-  const portfolio = findPortfolioById(store, portfolioId);
-
-  if (!portfolio) {
+  const metas = sortMetas(await idbGetAllPortfolioMeta());
+  const idx = metas.findIndex((m) => m.id === portfolioId);
+  if (idx < 0) {
     return null;
   }
-
+  const payload = await idbGetPortfolioPayload(portfolioId);
+  if (!payload) {
+    return null;
+  }
+  const meta = metas[idx]!;
+  const portfolioData =
+    idx < MAX_CACHED_DATA_PORTFOLIOS ? payload.portfolioData : null;
   return {
-    summary: toSummary(portfolio),
-    positions: portfolio.positions,
-    portfolioData: portfolio.portfolioData,
+    summary: toSummaryFromMeta(meta),
+    positions: payload.positions,
+    portfolioData,
   };
 }
 
@@ -168,17 +237,18 @@ export async function saveStoredPortfolioData(
   if (typeof window === "undefined") {
     return;
   }
-  const raw = await idbGetPortfolio(portfolioId);
-  const portfolio = normalizePortfolio(raw);
-
-  if (!portfolio) {
-    return;
-  }
-
-  portfolio.portfolioData = portfolioData;
-  portfolio.totalValue = portfolioData.summary.totalValue;
-  portfolio.lastViewedAt = new Date().toISOString();
-  await idbPutPortfolio(portfolio);
+  const now = new Date().toISOString();
+  await idbMutatePortfolioRows(portfolioId, ({ meta, payload }) => ({
+    meta: {
+      ...meta,
+      lastViewedAt: now,
+      totalValue: portfolioData.summary.totalValue,
+    },
+    payload: {
+      ...payload,
+      portfolioData,
+    },
+  }));
 }
 
 export async function touchStoredPortfolio(portfolioId: string): Promise<void> {
@@ -207,15 +277,11 @@ export async function updateStoredPortfolioName(
   if (typeof window === "undefined") {
     return;
   }
-  const raw = await idbGetPortfolio(portfolioId);
-  const portfolio = normalizePortfolio(raw);
-
-  if (!portfolio) {
-    return;
-  }
-
-  portfolio.name = name.trim() || createPortfolioName(portfolio.sourceFileName);
-  await idbPutPortfolio(portfolio);
+  const trimmed = name.trim();
+  await idbMutatePortfolioMeta(portfolioId, (meta) => ({
+    ...meta,
+    name: trimmed || createPortfolioName(meta.sourceFileName),
+  }));
 }
 
 export async function removeStoredPortfolio(
@@ -246,43 +312,6 @@ export async function resetPortfolioPersistenceForTests(): Promise<void> {
   localStorage.clear();
 }
 
-function normalizePortfolio(value: unknown): StoredPortfolioRecord | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const portfolio = value as Partial<StoredPortfolioRecord>;
-  if (
-    typeof portfolio.id !== "string" ||
-    typeof portfolio.name !== "string" ||
-    typeof portfolio.sourceFileName !== "string" ||
-    typeof portfolio.uploadedAt !== "string" ||
-    typeof portfolio.lastViewedAt !== "string" ||
-    !Array.isArray(portfolio.positions)
-  ) {
-    return null;
-  }
-
-  return {
-    id: portfolio.id,
-    name: portfolio.name,
-    sourceFileName: portfolio.sourceFileName,
-    uploadedAt: portfolio.uploadedAt,
-    lastViewedAt: portfolio.lastViewedAt,
-    positionCount:
-      typeof portfolio.positionCount === "number"
-        ? portfolio.positionCount
-        : portfolio.positions.length,
-    totalValue:
-      typeof portfolio.totalValue === "number" ? portfolio.totalValue : undefined,
-    positions: portfolio.positions,
-    portfolioData:
-      portfolio.portfolioData && typeof portfolio.portfolioData === "object"
-        ? (portfolio.portfolioData as PortfolioData)
-        : null,
-  };
-}
-
 function pruneStore(store: PortfolioStore): PortfolioStore {
   return {
     version: STORE_VERSION,
@@ -309,6 +338,17 @@ function sortPortfolios(portfolios: StoredPortfolioRecord[]): StoredPortfolioRec
   });
 }
 
+function sortMetas(metas: PortfolioMetaRow[]): PortfolioMetaRow[] {
+  return [...metas].sort((a, b) => {
+    const viewedDelta =
+      new Date(b.lastViewedAt).getTime() - new Date(a.lastViewedAt).getTime();
+    if (viewedDelta !== 0) {
+      return viewedDelta;
+    }
+    return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+  });
+}
+
 function findPortfolioById(
   store: PortfolioStore,
   portfolioId: string
@@ -325,6 +365,18 @@ function toSummary(portfolio: StoredPortfolioRecord): StoredPortfolioSummary {
     lastViewedAt: portfolio.lastViewedAt,
     positionCount: portfolio.positions.length,
     totalValue: portfolio.totalValue,
+  };
+}
+
+function toSummaryFromMeta(meta: PortfolioMetaRow): StoredPortfolioSummary {
+  return {
+    id: meta.id,
+    name: meta.name,
+    sourceFileName: meta.sourceFileName,
+    uploadedAt: meta.uploadedAt,
+    lastViewedAt: meta.lastViewedAt,
+    positionCount: meta.positionCount,
+    totalValue: meta.totalValue,
   };
 }
 

@@ -103,4 +103,4 @@ We don't maintain backwards compatibility. When making changes, migrate to one n
 
 - **Yahoo rate limits**: `yahoo.ts` retries on 429; fallback to last-good quote/holdings on failure
 - **Symbol mapping**: 401k-style identifiers may resolve via Yahoo search; `SKIP_SYMBOLS` (e.g. FZFXX) skip fetch
-- **Client storage**: Portfolios in **IndexedDB** (`wmm-portfolios`); dashboard saves use a single `put` per record; add/remove/touch persist **deltas** (delete evictions + `put` only changed rows) instead of clearing the object store each time (`lib/storage.ts`, `lib/portfolioIdb.ts`)
+- **Client storage**: Portfolios in **IndexedDB** (`wmm-portfolios` v2): **`portfolioMeta`** (id, names, dates, counts, totals) and **`portfolioPayload`** (positions + `portfolioData`). Library listing reads meta only; dashboard refresh uses one read/write transaction across both stores. Add/remove/touch persist **deltas** (deletes + `put` only changed meta/payload rows). Opening v1 DBs migrates the legacy single `portfolios` object store in the version upgrade (`lib/storage.ts`, `lib/portfolioIdb.ts`)
