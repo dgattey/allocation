@@ -12,23 +12,26 @@ function siteOrigin(): string {
   return "http://localhost:3000";
 }
 
+const siteDescription =
+  "What you own, where it sits—and how it fits together, clear enough to act on.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
   title: {
     default: "WMM",
     template: "%s · WMM",
   },
-  description: "Visualize your portfolio allocation from Fidelity exports",
+  description: siteDescription,
   openGraph: {
     type: "website",
     siteName: "WMM",
     title: "WMM",
-    description: "Visualize your portfolio allocation from Fidelity exports",
+    description: siteDescription,
   },
   twitter: {
     card: "summary_large_image",
     title: "WMM",
-    description: "Visualize your portfolio allocation from Fidelity exports",
+    description: siteDescription,
   },
   icons: {
     icon: [

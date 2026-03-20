@@ -8,7 +8,7 @@ export const socialOgImageContentType = "image/png";
 
 /** Shared by Open Graph and Twitter metadata routes — no request or portfolio data. */
 export const socialOgImageAlt =
-  "WMM — Where's my money? Fidelity portfolio allocation as a live treemap";
+  "WMM — Where's my money? One clear view of what you own and how it fits together";
 
 export async function createSocialOgImage(): Promise<ImageResponse> {
   const svg = await readFile(
@@ -36,64 +36,60 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 52,
+            gap: 64,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 188,
-              height: 188,
-              borderRadius: 32,
-              background: "#ffffff",
-              boxShadow:
-                "0 4px 28px rgba(26, 31, 46, 0.08), 0 1px 4px rgba(26, 31, 46, 0.04)",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders this to PNG */}
-            <img src={iconSrc} width={148} height={148} alt="" />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders this to PNG */}
+          <img src={iconSrc} width={272} height={272} alt="" />
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 14,
-              maxWidth: 820,
+              alignItems: "flex-start",
+              maxWidth: 780,
             }}
           >
             <div
               style={{
-                fontSize: 92,
-                fontWeight: 700,
-                letterSpacing: "-0.04em",
-                color: "#1a1f2e",
-                lineHeight: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
               }}
             >
-              WMM
+              <div
+                style={{
+                  fontSize: 92,
+                  fontWeight: 700,
+                  letterSpacing: "-0.04em",
+                  color: "#1a1f2e",
+                  lineHeight: 1,
+                }}
+              >
+                WMM
+              </div>
+              <div
+                style={{
+                  fontSize: 30,
+                  fontWeight: 600,
+                  color: "#5B7BA8",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {"Where\u2019s my money?"}
+              </div>
             </div>
             <div
               style={{
                 fontSize: 30,
-                fontWeight: 600,
-                color: "#5B7BA8",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              {"Where\u2019s my money?"}
-            </div>
-            <div
-              style={{
-                fontSize: 32,
                 fontWeight: 400,
                 color: "#4b5563",
-                lineHeight: 1.38,
-                marginTop: 10,
+                lineHeight: 1.42,
+                marginTop: 52,
+                maxWidth: 720,
               }}
             >
-              Upload a Fidelity CSV—live treemap, table, and quotes.
+              What you own, where it sits—and how it fits together, clear enough to
+              act on.
             </div>
           </div>
         </div>
