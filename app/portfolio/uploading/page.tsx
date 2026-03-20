@@ -6,41 +6,34 @@ import { DashboardSkeleton } from "@/app/components/skeletons";
 import { usePendingUpload } from "@/app/contexts/PendingUploadContext";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
-/**
- * One upload pipeline per navigation to this route. Survives React Strict Mode
- * (effect runs twice across remounts; the first pass consumes pending files).
- * Empty-file effect passes must not call `replace("/")` while that promise exists.
- */
-let inFlightUpload: Promise<unknown> | null = null;
-
 export default function UploadingPage() {
   const router = useRouter();
-  const { takePendingFiles, setProcessing } = usePendingUpload();
+  const { claimPendingUpload, releaseUploadBatch } = usePendingUpload();
   const { uploadFiles, setError } = usePortfolioLibrary();
 
   const routerRef = useRef(router);
   const uploadFilesRef = useRef(uploadFiles);
   const setErrorRef = useRef(setError);
-  const setProcessingRef = useRef(setProcessing);
 
   useLayoutEffect(() => {
     routerRef.current = router;
     uploadFilesRef.current = uploadFiles;
     setErrorRef.current = setError;
-    setProcessingRef.current = setProcessing;
   });
 
   useEffect(() => {
-    const files = takePendingFiles();
+    const claim = claimPendingUpload();
 
-    if (!files?.length) {
-      if (!inFlightUpload) {
-        routerRef.current.replace("/");
-      }
+    if (claim.kind === "none") {
+      routerRef.current.replace("/");
       return;
     }
 
-    const uploadWork = uploadFilesRef.current(files)
+    if (claim.kind === "claimed") {
+      return;
+    }
+
+    uploadFilesRef.current(claim.files)
       .then(({ uploadedPortfolios, failedUploads }) => {
         if (failedUploads.length > 0) {
           setErrorRef.current(
@@ -62,14 +55,11 @@ export default function UploadingPage() {
       })
       .catch(() => {
         routerRef.current.replace("/");
+      })
+      .finally(() => {
+        releaseUploadBatch();
       });
-
-    const withCleanup = uploadWork.finally(() => {
-      inFlightUpload = null;
-      setProcessingRef.current(false);
-    });
-    inFlightUpload = withCleanup;
-  }, [takePendingFiles]);
+  }, [claimPendingUpload, releaseUploadBatch]);
 
   return <DashboardSkeleton enableIntroAnimation={false} />;
 }
