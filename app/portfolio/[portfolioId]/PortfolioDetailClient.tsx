@@ -4,8 +4,8 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Dashboard } from "@/app/components/Dashboard";
 import { PortfolioEmptyState } from "@/app/components/PortfolioEmptyState";
-import { PortfolioLoadingState } from "@/app/components/PortfolioLoadingState";
 import { PortfolioSearchParamsBridge } from "@/app/components/PortfolioSearchParamsBridge";
+import { DashboardSkeleton } from "@/app/components/skeletons";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePortfolioUrlSync } from "@/hooks/usePortfolioUrlSync";
 import { usePortfolioViewState } from "@/hooks/usePortfolioViewState";
@@ -14,10 +14,7 @@ import {
   DESKTOP_TREE_MAP_LAYOUT,
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
-import {
-  getStoredPortfolioSummary,
-  updateStoredPortfolioName,
-} from "@/lib/storage";
+import { updateStoredPortfolioName } from "@/lib/storage";
 import { parsePortfolioUrlState } from "@/lib/urlFilters";
 
 interface PortfolioDetailClientProps {
@@ -78,15 +75,10 @@ export function PortfolioDetailClient({
       : "WMM";
   }, [record.summary]);
 
-  const immediatePortfolioName = useMemo(
-    () => getStoredPortfolioSummary(portfolioId)?.name,
-    [portfolioId]
-  );
-
   const handleRenamePortfolio = useCallback(
-    (id: string, name: string) => {
-      updateStoredPortfolioName(id, name);
-      record.refreshFromStorage();
+    async (id: string, name: string) => {
+      await updateStoredPortfolioName(id, name);
+      await record.refreshFromStorage();
     },
     [record]
   );
@@ -102,10 +94,10 @@ export function PortfolioDetailClient({
     );
   } else if (!record.portfolioData) {
     mainContent = (
-      <PortfolioLoadingState
-        portfolioName={record.summary?.name ?? immediatePortfolioName}
+      <DashboardSkeleton
+        portfolioName={record.summary?.name}
         isMobile={isMobile}
-        enableIntroAnimation={!record.restoredFromStorage}
+        enableIntroAnimation={false}
         error={record.error}
       />
     );

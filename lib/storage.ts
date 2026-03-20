@@ -3,8 +3,19 @@ import type {
   PortfolioData,
   StoredPortfolioSummary,
 } from "./types";
+import type { PortfolioMetaRow, PortfolioPayloadRow } from "./portfolioIdb";
+import {
+  deletePortfolioDatabaseForTests,
+  idbApplyPortfolioSplitDelta,
+  idbClearAllPortfolios,
+  idbGetAllPortfolioMeta,
+  idbGetAllPortfolioPayload,
+  idbGetPortfolioMeta,
+  idbGetPortfolioPayload,
+  idbMutatePortfolioMeta,
+  idbMutatePortfolioRows,
+} from "./portfolioIdb";
 
-const PORTFOLIO_STORE_KEY = "portfolio_store";
 const MAX_STORED_PORTFOLIOS = 8;
 const MAX_CACHED_DATA_PORTFOLIOS = 3;
 const STORE_VERSION = 1;
@@ -19,6 +30,112 @@ interface PortfolioStore {
   portfolios: StoredPortfolioRecord[];
 }
 
+function toMetaRow(p: StoredPortfolioRecord): PortfolioMetaRow {
+  return {
+    id: p.id,
+    name: p.name,
+    sourceFileName: p.sourceFileName,
+    uploadedAt: p.uploadedAt,
+    lastViewedAt: p.lastViewedAt,
+    positionCount: p.positions.length,
+    totalValue: p.totalValue,
+  };
+}
+
+function toPayloadRow(p: StoredPortfolioRecord): PortfolioPayloadRow {
+  return {
+    id: p.id,
+    positions: p.positions,
+    portfolioData: p.portfolioData,
+  };
+}
+
+function mergePortfolioRow(
+  meta: PortfolioMetaRow,
+  payload: PortfolioPayloadRow
+): StoredPortfolioRecord {
+  const positionCount = payload.positions.length;
+  return {
+    id: meta.id,
+    name: meta.name,
+    sourceFileName: meta.sourceFileName,
+    uploadedAt: meta.uploadedAt,
+    lastViewedAt: meta.lastViewedAt,
+    positionCount,
+    totalValue: meta.totalValue,
+    positions: payload.positions,
+    portfolioData: payload.portfolioData,
+  };
+}
+
+async function loadStoreFromIdb(): Promise<PortfolioStore> {
+  if (typeof window === "undefined") {
+    return createEmptyStore();
+  }
+  const [metas, payloads] = await Promise.all([
+    idbGetAllPortfolioMeta(),
+    idbGetAllPortfolioPayload(),
+  ]);
+  const payloadById = new Map(payloads.map((p) => [p.id, p]));
+  const portfolios: StoredPortfolioRecord[] = [];
+  for (const m of metas) {
+    const p = payloadById.get(m.id);
+    if (!p) {
+      continue;
+    }
+    portfolios.push(mergePortfolioRow(m, p));
+  }
+  return pruneStore({
+    version: STORE_VERSION,
+    portfolios,
+  });
+}
+
+function snapshotMetaById(portfolios: StoredPortfolioRecord[]): Map<string, string> {
+  return new Map(portfolios.map((p) => [p.id, JSON.stringify(toMetaRow(p))]));
+}
+
+function snapshotPayloadById(portfolios: StoredPortfolioRecord[]): Map<string, string> {
+  return new Map(portfolios.map((p) => [p.id, JSON.stringify(toPayloadRow(p))]));
+}
+
+/** Persists deletes plus meta/payload rows that changed vs `before`. */
+async function persistStoreDelta(
+  before: PortfolioStore,
+  next: PortfolioStore
+): Promise<PortfolioStore> {
+  if (typeof window === "undefined") {
+    return next;
+  }
+
+  const prevMeta = snapshotMetaById(before.portfolios);
+  const prevPayload = snapshotPayloadById(before.portfolios);
+  const nextIds = new Set(next.portfolios.map((p) => p.id));
+
+  const deleteIds: string[] = [];
+  for (const id of prevMeta.keys()) {
+    if (!nextIds.has(id)) {
+      deleteIds.push(id);
+    }
+  }
+
+  const metasToPut: PortfolioMetaRow[] = [];
+  const payloadsToPut: PortfolioPayloadRow[] = [];
+  for (const p of next.portfolios) {
+    const m = toMetaRow(p);
+    const pl = toPayloadRow(p);
+    if (prevMeta.get(p.id) !== JSON.stringify(m)) {
+      metasToPut.push(m);
+    }
+    if (prevPayload.get(p.id) !== JSON.stringify(pl)) {
+      payloadsToPut.push(pl);
+    }
+  }
+
+  await idbApplyPortfolioSplitDelta(deleteIds, metasToPut, payloadsToPut);
+  return next;
+}
+
 export interface SaveUploadedPortfolioInput {
   sourceFileName: string;
   positions: FidelityPosition[];
@@ -30,10 +147,13 @@ export interface StoredPortfolioPayload {
   portfolioData: PortfolioData | null;
 }
 
-export function saveUploadedPortfolio({
+export async function saveUploadedPortfolio({
   sourceFileName,
   positions,
-}: SaveUploadedPortfolioInput): StoredPortfolioSummary {
+}: SaveUploadedPortfolioInput): Promise<StoredPortfolioSummary> {
+  if (typeof window === "undefined") {
+    throw new Error("saveUploadedPortfolio requires a browser environment");
+  }
   const now = new Date().toISOString();
   const portfolio: StoredPortfolioRecord = {
     id: createPortfolioId(),
@@ -46,235 +166,150 @@ export function saveUploadedPortfolio({
     portfolioData: null,
   };
 
-  const store = readStore();
-  const persisted = persistStore({
-    ...store,
-    portfolios: [portfolio, ...store.portfolios],
-  });
-
+  const beforeStore = await loadStoreFromIdb();
+  const merged: PortfolioStore = {
+    version: STORE_VERSION,
+    portfolios: [
+      portfolio,
+      ...beforeStore.portfolios.filter(({ id }) => id !== portfolio.id),
+    ],
+  };
+  const nextStore = pruneStore(merged);
+  const persisted = await persistStoreDelta(beforeStore, nextStore);
   return toSummary(findPortfolioById(persisted, portfolio.id) ?? portfolio);
 }
 
-export function listStoredPortfolios(): StoredPortfolioSummary[] {
-  return sortPortfolios(readStore().portfolios).map(toSummary);
+export async function listStoredPortfolios(): Promise<StoredPortfolioSummary[]> {
+  if (typeof window === "undefined") {
+    return [];
+  }
+  const metas = await idbGetAllPortfolioMeta();
+  return sortMetas(metas).map(toSummaryFromMeta);
 }
 
-export function getMostRecentPortfolioId(): string | null {
-  return listStoredPortfolios()[0]?.id ?? null;
-}
-
-/** Lightweight read — returns only the summary (name, dates) without positions or data */
-export function getStoredPortfolioSummary(
-  portfolioId: string
-): StoredPortfolioSummary | null {
-  const portfolio = findPortfolioById(readStore(), portfolioId);
-  return portfolio ? toSummary(portfolio) : null;
-}
-
-export function loadStoredPortfolio(
-  portfolioId: string
-): StoredPortfolioPayload | null {
-  const portfolio = findPortfolioById(readStore(), portfolioId);
-
-  if (!portfolio) {
+export async function getMostRecentPortfolioId(): Promise<string | null> {
+  if (typeof window === "undefined") {
     return null;
   }
+  const metas = await idbGetAllPortfolioMeta();
+  return sortMetas(metas)[0]?.id ?? null;
+}
 
+export async function getStoredPortfolioSummary(
+  portfolioId: string
+): Promise<StoredPortfolioSummary | null> {
+  if (typeof window === "undefined" || !portfolioId) {
+    return null;
+  }
+  const meta = await idbGetPortfolioMeta(portfolioId);
+  return meta ? toSummaryFromMeta(meta) : null;
+}
+
+export async function loadStoredPortfolio(
+  portfolioId: string
+): Promise<StoredPortfolioPayload | null> {
+  if (typeof window === "undefined" || !portfolioId) {
+    return null;
+  }
+  const metas = sortMetas(await idbGetAllPortfolioMeta());
+  const idx = metas.findIndex((m) => m.id === portfolioId);
+  if (idx < 0) {
+    return null;
+  }
+  const payload = await idbGetPortfolioPayload(portfolioId);
+  if (!payload) {
+    return null;
+  }
+  const meta = metas[idx]!;
+  const portfolioData =
+    idx < MAX_CACHED_DATA_PORTFOLIOS ? payload.portfolioData : null;
   return {
-    summary: toSummary(portfolio),
-    positions: portfolio.positions,
-    portfolioData: portfolio.portfolioData,
+    summary: toSummaryFromMeta(meta),
+    positions: payload.positions,
+    portfolioData,
   };
 }
 
-export function saveStoredPortfolioData(
+export async function saveStoredPortfolioData(
   portfolioId: string,
   portfolioData: PortfolioData
-): void {
-  const store = readStore();
-  const portfolio = findPortfolioById(store, portfolioId);
+): Promise<void> {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const now = new Date().toISOString();
+  await idbMutatePortfolioRows(portfolioId, ({ meta, payload }) => ({
+    meta: {
+      ...meta,
+      lastViewedAt: now,
+      totalValue: portfolioData.summary.totalValue,
+    },
+    payload: {
+      ...payload,
+      portfolioData,
+    },
+  }));
+}
 
-  if (!portfolio) {
+export async function touchStoredPortfolio(portfolioId: string): Promise<void> {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const beforeStore = await loadStoreFromIdb();
+  if (!findPortfolioById(beforeStore, portfolioId)) {
     return;
   }
 
-  portfolio.portfolioData = portfolioData;
-  portfolio.totalValue = portfolioData.summary.totalValue;
-  portfolio.lastViewedAt = new Date().toISOString();
-  persistStore(store);
+  const now = new Date().toISOString();
+  const nextStore = pruneStore({
+    version: STORE_VERSION,
+    portfolios: beforeStore.portfolios.map((p) =>
+      p.id === portfolioId ? { ...p, lastViewedAt: now } : p
+    ),
+  });
+  await persistStoreDelta(beforeStore, nextStore);
 }
 
-export function touchStoredPortfolio(portfolioId: string): void {
-  const store = readStore();
-  const portfolio = findPortfolioById(store, portfolioId);
-
-  if (!portfolio) {
-    return;
-  }
-
-  portfolio.lastViewedAt = new Date().toISOString();
-  persistStore(store);
-}
-
-export function updateStoredPortfolioName(
+export async function updateStoredPortfolioName(
   portfolioId: string,
   name: string
-): void {
-  const store = readStore();
-  const portfolio = findPortfolioById(store, portfolioId);
-
-  if (!portfolio) {
+): Promise<void> {
+  if (typeof window === "undefined") {
     return;
   }
-
-  portfolio.name = name.trim() || createPortfolioName(portfolio.sourceFileName);
-  persistStore(store);
+  const trimmed = name.trim();
+  await idbMutatePortfolioMeta(portfolioId, (meta) => ({
+    ...meta,
+    name: trimmed || createPortfolioName(meta.sourceFileName),
+  }));
 }
 
-export function removeStoredPortfolio(portfolioId: string): string | null {
-  const store = readStore();
-  const persisted = persistStore({
-    ...store,
-    portfolios: store.portfolios.filter(({ id }) => id !== portfolioId),
-  });
-
-  return sortPortfolios(persisted.portfolios)[0]?.id ?? null;
-}
-
-export function clearStoredPortfolios(): void {
-  try {
-    localStorage.removeItem(PORTFOLIO_STORE_KEY);
-  } catch {
-    console.error("Failed to clear portfolio store from localStorage");
-  }
-}
-
-function readStore(): PortfolioStore {
+export async function removeStoredPortfolio(
+  portfolioId: string
+): Promise<string | null> {
   if (typeof window === "undefined") {
-    return createEmptyStore();
-  }
-
-  try {
-    const raw = localStorage.getItem(PORTFOLIO_STORE_KEY);
-    if (!raw) {
-      return createEmptyStore();
-    }
-
-    const normalized = normalizeStore(JSON.parse(raw));
-    if (normalized) {
-      return normalized;
-    }
-  } catch {
-    console.error("Failed to read portfolio store from localStorage");
-  }
-
-  return createEmptyStore();
-}
-
-function normalizeStore(value: unknown): PortfolioStore | null {
-  if (!value || typeof value !== "object") {
     return null;
   }
-
-  const store = value as Partial<PortfolioStore>;
-  if (!Array.isArray(store.portfolios)) {
-    return null;
-  }
-
-  return pruneStore({
-    version: typeof store.version === "number" ? store.version : STORE_VERSION,
-    portfolios: store.portfolios
-      .map((portfolio) => normalizePortfolio(portfolio))
-      .filter((portfolio): portfolio is StoredPortfolioRecord => portfolio !== null),
+  const beforeStore = await loadStoreFromIdb();
+  const nextStore = pruneStore({
+    ...beforeStore,
+    portfolios: beforeStore.portfolios.filter(({ id }) => id !== portfolioId),
   });
+  await persistStoreDelta(beforeStore, nextStore);
+  return nextStore.portfolios[0]?.id ?? null;
 }
 
-function normalizePortfolio(value: unknown): StoredPortfolioRecord | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const portfolio = value as Partial<StoredPortfolioRecord>;
-  if (
-    typeof portfolio.id !== "string" ||
-    typeof portfolio.name !== "string" ||
-    typeof portfolio.sourceFileName !== "string" ||
-    typeof portfolio.uploadedAt !== "string" ||
-    typeof portfolio.lastViewedAt !== "string" ||
-    !Array.isArray(portfolio.positions)
-  ) {
-    return null;
-  }
-
-  return {
-    id: portfolio.id,
-    name: portfolio.name,
-    sourceFileName: portfolio.sourceFileName,
-    uploadedAt: portfolio.uploadedAt,
-    lastViewedAt: portfolio.lastViewedAt,
-    positionCount:
-      typeof portfolio.positionCount === "number"
-        ? portfolio.positionCount
-        : portfolio.positions.length,
-    totalValue:
-      typeof portfolio.totalValue === "number" ? portfolio.totalValue : undefined,
-    positions: portfolio.positions,
-    portfolioData:
-      portfolio.portfolioData && typeof portfolio.portfolioData === "object"
-        ? (portfolio.portfolioData as PortfolioData)
-        : null,
-  };
-}
-
-function persistStore(store: PortfolioStore): PortfolioStore {
-  const nextStore = pruneStore(store);
-
+export async function clearStoredPortfolios(): Promise<void> {
   if (typeof window === "undefined") {
-    return nextStore;
+    return;
   }
-
-  let attempt = nextStore;
-
-  while (true) {
-    try {
-      localStorage.setItem(PORTFOLIO_STORE_KEY, JSON.stringify(attempt));
-      return attempt;
-    } catch {
-      const downgraded = downgradeStoreForQuota(attempt);
-      if (!downgraded) {
-        console.error("Failed to persist portfolio store to localStorage");
-        return attempt;
-      }
-      attempt = downgraded;
-    }
-  }
+  await idbClearAllPortfolios();
 }
 
-function downgradeStoreForQuota(store: PortfolioStore): PortfolioStore | null {
-  const portfolios = sortPortfolios(store.portfolios);
-  const oldestCachedPortfolio = [...portfolios]
-    .reverse()
-    .find(({ portfolioData }) => portfolioData !== null);
-
-  if (oldestCachedPortfolio) {
-    return pruneStore({
-      ...store,
-      portfolios: portfolios.map((portfolio) =>
-        portfolio.id === oldestCachedPortfolio.id
-          ? { ...portfolio, portfolioData: null }
-          : portfolio
-      ),
-    });
-  }
-
-  if (portfolios.length <= 1) {
-    return null;
-  }
-
-  return pruneStore({
-    ...store,
-    portfolios: portfolios.slice(0, -1),
-  });
+/** Vitest: wipe IDB (+ localStorage for isolation). */
+export async function resetPortfolioPersistenceForTests(): Promise<void> {
+  await deletePortfolioDatabaseForTests();
+  localStorage.clear();
 }
 
 function pruneStore(store: PortfolioStore): PortfolioStore {
@@ -303,6 +338,17 @@ function sortPortfolios(portfolios: StoredPortfolioRecord[]): StoredPortfolioRec
   });
 }
 
+function sortMetas(metas: PortfolioMetaRow[]): PortfolioMetaRow[] {
+  return [...metas].sort((a, b) => {
+    const viewedDelta =
+      new Date(b.lastViewedAt).getTime() - new Date(a.lastViewedAt).getTime();
+    if (viewedDelta !== 0) {
+      return viewedDelta;
+    }
+    return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+  });
+}
+
 function findPortfolioById(
   store: PortfolioStore,
   portfolioId: string
@@ -319,6 +365,18 @@ function toSummary(portfolio: StoredPortfolioRecord): StoredPortfolioSummary {
     lastViewedAt: portfolio.lastViewedAt,
     positionCount: portfolio.positions.length,
     totalValue: portfolio.totalValue,
+  };
+}
+
+function toSummaryFromMeta(meta: PortfolioMetaRow): StoredPortfolioSummary {
+  return {
+    id: meta.id,
+    name: meta.name,
+    sourceFileName: meta.sourceFileName,
+    uploadedAt: meta.uploadedAt,
+    lastViewedAt: meta.lastViewedAt,
+    positionCount: meta.positionCount,
+    totalValue: meta.totalValue,
   };
 }
 

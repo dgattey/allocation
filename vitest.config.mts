@@ -15,5 +15,6 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./vitest.setup.ts",
+    // App-level React Strict Mode: next.config.ts → reactStrictMode (not wrapped in test trees).
   },
 });

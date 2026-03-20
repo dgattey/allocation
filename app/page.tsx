@@ -4,24 +4,35 @@ import { useRouter } from "next/navigation";
 import TreemapMarkIcon from "@/public/icon.svg";
 import { HomeHowItWorksSection } from "./components/HomeHowItWorksSection";
 import { PortfolioLibraryNav } from "./components/PortfolioLibraryNav";
+import { DashboardSkeleton } from "./components/skeletons";
 import { UploadView } from "./components/UploadView";
-import { usePendingUpload } from "@/app/contexts/PendingUploadContext";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
 export default function Home() {
   const router = useRouter();
-  const { setPendingFiles } = usePendingUpload();
+  const isMobile = useIsMobile();
   const {
     portfolios,
     isUploading,
     error,
+    uploadFiles,
     removePortfolioById,
     renamePortfolio,
   } = usePortfolioLibrary();
 
-  function handleFilesSelect(files: File[]) {
-    setPendingFiles(files);
-    router.push("/portfolio/uploading");
+  async function handleFilesSelect(files: File[]) {
+    const { uploadedPortfolios } = await uploadFiles(files);
+    const id = uploadedPortfolios.at(-1)?.id;
+    if (id) router.push(`/portfolio/${id}`);
+  }
+
+  if (isUploading) {
+    return (
+      <main className="flex min-h-0 flex-1 flex-col">
+        <DashboardSkeleton isMobile={isMobile} enableIntroAnimation={false} />
+      </main>
+    );
   }
 
   return (
@@ -56,7 +67,7 @@ export default function Home() {
           <UploadView
             onFilesSelect={handleFilesSelect}
             error={error}
-            isLoading={isUploading}
+            isLoading={false}
           />
         </section>
 

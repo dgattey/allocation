@@ -6,7 +6,7 @@ Instructions for AI coding agents working in this repo.
 
 **Portfolio Allocation** is a Next.js app that visualizes Fidelity portfolio allocation. Users upload a Fidelity positions CSV, then see an interactive treemap and sortable table enriched with live Yahoo Finance data (quotes, fund holdings).
 
-- **Upload flow**: Client parses CSV → `POST /api/portfolio` with positions → server fetches Yahoo quotes/holdings → computes treemap layout (d3-hierarchy) → returns `PortfolioData`
+- **Upload flow**: Home parses CSV → persists positions in `localStorage` → navigates to `/portfolio/:id` → client `POST /api/portfolio` loads Yahoo quotes/holdings → `PortfolioData` for the dashboard
 - **Client state**: `usePortfolio` hook manages upload, storage (localStorage), filters, sort, expand/collapse, view mode (holdings vs positions), treemap grouping (fund vs holding)
 - **Data flow**: `lib/server/portfolioData.ts` orchestrates; `yahoo.ts` handles Yahoo Finance API with caching, retries, symbol mapping
 
@@ -53,7 +53,7 @@ All four should pass. Run them before committing.
 |------|---------|
 | `app/` | Next.js App Router: `page.tsx`, `layout.tsx`, `api/portfolio/route.ts` |
 | `app/components/` | React UI: `Dashboard`, `TreeMap`, `PortfolioTable`, `UploadView`, toolbar, primitives |
-| `lib/` | Pure logic: CSV parsing, treemap layout, types, filters, sort, storage |
+| `lib/` | Pure logic: CSV parsing, treemap layout, types, filters, sort, `storage` + `portfolioIdb` |
 | `lib/server/` | Server-only: Yahoo API, aggregation, `portfolioData` builder |
 | `hooks/` | `usePortfolio`, `useTimeAgo` |
 | `vitest.setup.ts` | Vitest + jsdom + matchMedia mock |
@@ -103,4 +103,4 @@ We don't maintain backwards compatibility. When making changes, migrate to one n
 
 - **Yahoo rate limits**: `yahoo.ts` retries on 429; fallback to last-good quote/holdings on failure
 - **Symbol mapping**: 401k-style identifiers may resolve via Yahoo search; `SKIP_SYMBOLS` (e.g. FZFXX) skip fetch
-- **Client storage**: Portfolio persisted to `localStorage` via `lib/storage.ts`
+- **Client storage**: Portfolios in **IndexedDB** database **`wmm-portfolio-store`**: object stores **`portfolioMeta`** (id, names, dates, counts, totals) and **`portfolioPayload`** (positions + `portfolioData`). Library listing reads meta only; dashboard refresh uses one read/write transaction across both stores. Add/remove/touch persist **deltas** (deletes + `put` only changed meta/payload rows). No migration from older DB names—schema changes use a new database name (`lib/storage.ts`, `lib/portfolioIdb.ts`)
