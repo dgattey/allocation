@@ -41,6 +41,7 @@ describe("usePortfolioLibrary", () => {
     const uploadResult = await result.current.uploadFiles([firstFile, secondFile]);
 
     expect(uploadResult.failedUploads).toEqual([]);
+    await result.current.refreshLibrary();
     await waitFor(() => {
       expect(result.current.portfolios).toHaveLength(2);
     });
@@ -72,13 +73,14 @@ describe("usePortfolioLibrary", () => {
     expect(uploadResult.failedUploads).toEqual([
       expect.objectContaining({ fileName: "bad.csv" }),
     ]);
+    await result.current.refreshLibrary();
     await waitFor(() => {
       expect(result.current.portfolios).toHaveLength(1);
       expect(result.current.error).toMatch(/bad\.csv/i);
     });
   });
 
-  it("skips library refresh when onPersistedBeforeRefresh returns true", async () => {
+  it("does not refresh portfolios until refreshLibrary runs", async () => {
     const { result } = renderHook(() => usePortfolioLibrary());
 
     await waitFor(() => {
@@ -95,11 +97,14 @@ describe("usePortfolioLibrary", () => {
       { type: "text/csv" }
     );
 
-    const uploadResult = await result.current.uploadFiles([file], {
-      onPersistedBeforeRefresh: () => true,
-    });
+    const uploadResult = await result.current.uploadFiles([file]);
 
     expect(uploadResult.uploadedPortfolios).toHaveLength(1);
     expect(result.current.portfolios).toEqual([]);
+
+    await result.current.refreshLibrary();
+    await waitFor(() => {
+      expect(result.current.portfolios).toHaveLength(1);
+    });
   });
 });
