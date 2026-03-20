@@ -114,7 +114,7 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
                 fontWeight: 400,
                 color: "#4b5563",
                 lineHeight: 1.4,
-                marginTop: 88,
+                marginTop: 72,
                 maxWidth: 720,
               }}
             >
