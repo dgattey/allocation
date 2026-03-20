@@ -1,8 +1,5 @@
 import { openDB, type IDBPDatabase } from "idb";
 
-/** Legacy monolithic blob (migrated once into IndexedDB). */
-export const LEGACY_PORTFOLIO_LOCALSTORAGE_KEY = "portfolio_store";
-
 const DB_NAME = "wmm-portfolios";
 const DB_VERSION = 1;
 const STORE = "portfolios" as const;
@@ -66,11 +63,6 @@ export async function idbReplaceAllPortfolios(records: unknown[]): Promise<void>
     tx.store.put(r);
   }
   await tx.done;
-}
-
-export async function idbCountPortfolios(): Promise<number> {
-  const db = await getPortfolioDB();
-  return db.count(STORE);
 }
 
 export async function idbClearAllPortfolios(): Promise<void> {

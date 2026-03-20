@@ -103,4 +103,4 @@ We don't maintain backwards compatibility. When making changes, migrate to one n
 
 - **Yahoo rate limits**: `yahoo.ts` retries on 429; fallback to last-good quote/holdings on failure
 - **Symbol mapping**: 401k-style identifiers may resolve via Yahoo search; `SKIP_SYMBOLS` (e.g. FZFXX) skip fetch
-- **Client storage**: Portfolios in **IndexedDB** (`wmm-portfolios`, per-row `put` for dashboard updates); legacy `localStorage` key `portfolio_store` migrates once on first load (`lib/storage.ts`, `lib/portfolioIdb.ts`)
+- **Client storage**: Portfolios in **IndexedDB** (`wmm-portfolios`); dashboard saves use a single `put` per record instead of rewriting one giant `localStorage` JSON blob (`lib/storage.ts`, `lib/portfolioIdb.ts`)

@@ -4,10 +4,8 @@ import type {
   StoredPortfolioSummary,
 } from "./types";
 import {
-  LEGACY_PORTFOLIO_LOCALSTORAGE_KEY,
   deletePortfolioDatabaseForTests,
   idbClearAllPortfolios,
-  idbCountPortfolios,
   idbGetAllPortfolios,
   idbPutPortfolio,
   idbReplaceAllPortfolios,
@@ -27,63 +25,10 @@ interface PortfolioStore {
   portfolios: StoredPortfolioRecord[];
 }
 
-let migrationPromise: Promise<void> | null = null;
-
-function migrateLegacyLocalStorageOnce(): Promise<void> {
-  if (typeof window === "undefined") {
-    return Promise.resolve();
-  }
-  if (!migrationPromise) {
-    migrationPromise = runLegacyMigration();
-  }
-  return migrationPromise;
-}
-
-async function runLegacyMigration(): Promise<void> {
-  const existing = await idbCountPortfolios();
-  if (existing > 0) {
-    try {
-      localStorage.removeItem(LEGACY_PORTFOLIO_LOCALSTORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-    return;
-  }
-
-  const raw = localStorage.getItem(LEGACY_PORTFOLIO_LOCALSTORAGE_KEY);
-  if (!raw) {
-    return;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    const normalized = normalizeStore(parsed);
-    if (normalized && normalized.portfolios.length > 0) {
-      await idbReplaceAllPortfolios(normalized.portfolios);
-    }
-  } catch {
-    console.error("Failed to migrate portfolio data from localStorage");
-  } finally {
-    try {
-      localStorage.removeItem(LEGACY_PORTFOLIO_LOCALSTORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-  }
-}
-
-async function ensureClientPersistence(): Promise<void> {
-  if (typeof window === "undefined") {
-    return;
-  }
-  await migrateLegacyLocalStorageOnce();
-}
-
 async function loadStoreFromIdb(): Promise<PortfolioStore> {
   if (typeof window === "undefined") {
     return createEmptyStore();
   }
-  await ensureClientPersistence();
   const rawRows = await idbGetAllPortfolios();
   const portfolios = rawRows
     .map((row) => normalizePortfolio(row))
@@ -99,7 +44,6 @@ async function persistFullStore(store: PortfolioStore): Promise<PortfolioStore> 
   if (typeof window === "undefined") {
     return next;
   }
-  await ensureClientPersistence();
   await idbReplaceAllPortfolios(next.portfolios);
   return next;
 }
@@ -122,7 +66,6 @@ export async function saveUploadedPortfolio({
   if (typeof window === "undefined") {
     throw new Error("saveUploadedPortfolio requires a browser environment");
   }
-  await ensureClientPersistence();
   const now = new Date().toISOString();
   const portfolio: StoredPortfolioRecord = {
     id: createPortfolioId(),
@@ -268,38 +211,13 @@ export async function clearStoredPortfolios(): Promise<void> {
   if (typeof window === "undefined") {
     return;
   }
-  await ensureClientPersistence();
   await idbClearAllPortfolios();
-  try {
-    localStorage.removeItem(LEGACY_PORTFOLIO_LOCALSTORAGE_KEY);
-  } catch {
-    console.error("Failed to clear legacy portfolio localStorage key");
-  }
 }
 
-/** Vitest: wipe IDB + migration state (+ optional localStorage). */
+/** Vitest: wipe IDB (+ localStorage for isolation). */
 export async function resetPortfolioPersistenceForTests(): Promise<void> {
-  migrationPromise = null;
   await deletePortfolioDatabaseForTests();
   localStorage.clear();
-}
-
-function normalizeStore(value: unknown): PortfolioStore | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const store = value as Partial<PortfolioStore>;
-  if (!Array.isArray(store.portfolios)) {
-    return null;
-  }
-
-  return pruneStore({
-    version: typeof store.version === "number" ? store.version : STORE_VERSION,
-    portfolios: store.portfolios
-      .map((portfolio) => normalizePortfolio(portfolio))
-      .filter((portfolio): portfolio is StoredPortfolioRecord => portfolio !== null),
-  });
 }
 
 function normalizePortfolio(value: unknown): StoredPortfolioRecord | null {
