@@ -90,9 +90,8 @@ function PortfolioTile({
     : undefined;
 
   const tintIndex = resolvePortfolioTintIndex(portfolio);
-  const shellSurfaceStyle = {
-    ...vtShellStyle,
-    background: `var(--portfolio-tint-${tintIndex})`,
+  const portfolioBarStyle = {
+    background: `var(--portfolio-bar-${tintIndex})`,
   } as CSSProperties;
 
   useEffect(() => {
@@ -219,20 +218,25 @@ function PortfolioTile({
   return (
     <div
       className={cn(
-        "group relative rounded-2xl border p-4 shadow-sm transition-[box-shadow,border-color,background-color] duration-200",
+        "group relative overflow-hidden rounded-2xl border shadow-sm transition-[box-shadow,border-color,background-color] duration-200",
         !isEditing && "cursor-pointer",
         isActive
-          ? "border-accent ring-1 ring-accent/25"
-          : "border-border/80 hover:border-accent/65 hover:shadow-[var(--shadow-lg)]"
+          ? "border-accent bg-accent-bg/60 ring-1 ring-accent/20"
+          : "border-border/80 bg-bg/80 hover:border-accent/65 hover:bg-surface-hover/70 hover:shadow-[var(--shadow-lg)]"
       )}
-      style={shellSurfaceStyle}
+      style={vtShellStyle}
     >
+      <div
+        className="h-1.5 w-full shrink-0"
+        style={portfolioBarStyle}
+        aria-hidden
+      />
       {isEditing ? (
-        <div className="block min-h-full">{cardContent}</div>
+        <div className="relative p-4">{cardContent}</div>
       ) : (
         <Link
           href={`/portfolio/${portfolio.id}`}
-          className="relative z-0 block min-h-full cursor-pointer rounded-2xl outline-none after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          className="relative z-0 flex min-h-full cursor-pointer flex-col outline-none after:absolute after:inset-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/55"
           aria-label={`Open ${portfolio.name}`}
           title={
             typeof portfolio.totalValue === "number"
@@ -240,7 +244,7 @@ function PortfolioTile({
               : undefined
           }
         >
-          {cardContent}
+          <div className="relative z-[1] flex flex-1 flex-col p-4">{cardContent}</div>
         </Link>
       )}
 

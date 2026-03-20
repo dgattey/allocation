@@ -1,6 +1,6 @@
 import { hashString } from "./utils";
 
-/** Must match `--portfolio-tint-0` … `--portfolio-tint-${COUNT-1}` in `app/globals.css`. */
+/** Must match `--portfolio-bar-0` … `--portfolio-bar-${COUNT-1}` in `app/globals.css`. */
 export const PORTFOLIO_TINT_COUNT = 8;
 
 export function pickRandomPortfolioTintIndex(): number {
