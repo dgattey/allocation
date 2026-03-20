@@ -28,9 +28,9 @@
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-highlight: rgba(255, 255, 255, 0.5);
 
-  /* Skeleton: flat base + sheen overlay (see .skeleton::after) */
-  --skeleton-base: #eceef2;
-  --skeleton-sheen: rgba(255, 255, 255, 0.55);
+  /* Skeleton — Material UI wave pattern (default theme): text @ 11% + action.hover mid */
+  --skeleton-base: color-mix(in srgb, var(--text) 11%, transparent);
+  --skeleton-wave-mid: rgba(0, 0, 0, 0.04);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,8 +59,8 @@
     --glass-border: rgba(255, 255, 255, 0.06);
     --glass-highlight: rgba(255, 255, 255, 0.04);
 
-    --skeleton-base: #252a34;
-    --skeleton-sheen: rgba(255, 255, 255, 0.07);
+    --skeleton-base: color-mix(in srgb, var(--text) 13%, transparent);
+    --skeleton-wave-mid: rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -145,12 +145,14 @@ body {
   100% { background-color: transparent; }
 }
 
-/* === Skeleton (content-placeholder loaders) ===
-   Solid base + a soft highlight band swept across (common in major apps),
-   instead of sliding the whole fill which reads as a muddy ripple. */
-@keyframes skeleton-sheen {
+/* === Skeleton — MUI-style wave (see @mui/material Skeleton, animation="wave") === */
+@keyframes skeleton-wave {
   0% {
     transform: translateX(-100%);
+  }
+  50% {
+    /* second half of the cycle is idle — pause between sweeps */
+    transform: translateX(100%);
   }
   100% {
     transform: translateX(100%);
@@ -161,6 +163,9 @@ body {
   overflow: hidden;
   background-color: var(--skeleton-base);
   border-radius: 8px;
+  /* Safari compositing (MUI Skeleton workaround) */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
 }
 .skeleton::after {
   content: "";
@@ -168,14 +173,12 @@ body {
   inset: 0;
   transform: translateX(-100%);
   background: linear-gradient(
-    105deg,
-    transparent 0%,
-    transparent 38%,
-    var(--skeleton-sheen) 50%,
-    transparent 62%,
-    transparent 100%
+    90deg,
+    transparent,
+    var(--skeleton-wave-mid),
+    transparent
   );
-  animation: skeleton-sheen 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: skeleton-wave 2s linear 0.5s infinite;
 }
 
 /* === Scale In === */
