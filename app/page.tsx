@@ -17,14 +17,19 @@ export default function Home() {
     isUploading,
     error,
     uploadFiles,
+    refreshLibrary,
     removePortfolioById,
     renamePortfolio,
   } = usePortfolioLibrary();
 
   async function handleFilesSelect(files: File[]) {
-    const { uploadedPortfolios } = await uploadFiles(files);
-    const id = uploadedPortfolios.at(-1)?.id;
-    if (id) router.push(`/portfolio/${id}`);
+    const result = await uploadFiles(files);
+    const id = result.uploadedPortfolios.at(-1)?.id;
+    if (id) {
+      router.push(`/portfolio/${id}`);
+    } else {
+      await refreshLibrary();
+    }
   }
 
   if (isUploading) {

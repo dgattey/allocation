@@ -28,54 +28,49 @@ export function usePortfolioLibrary() {
     void refreshLibrary();
   }, [refreshLibrary]);
 
-  const uploadFiles = useCallback(
-    async (files: File[]): Promise<UploadPortfoliosResult> => {
-      setIsUploading(true);
-      setError(null);
+  const uploadFiles = useCallback(async (files: File[]) => {
+    setIsUploading(true);
+    setError(null);
 
-      const uploadedPortfolios: StoredPortfolioSummary[] = [];
-      const failedUploads: Array<{ fileName: string; reason: string }> = [];
+    const uploadedPortfolios: StoredPortfolioSummary[] = [];
+    const failedUploads: Array<{ fileName: string; reason: string }> = [];
 
-      try {
-        for (const file of files) {
-          try {
-            const positions = parseCSV(await file.text());
-            uploadedPortfolios.push(
-              await saveUploadedPortfolio({
-                sourceFileName: file.name,
-                positions,
-              })
-            );
-          } catch (nextError) {
-            failedUploads.push({
-              fileName: file.name,
-              reason:
-                nextError instanceof Error
-                  ? nextError.message
-                  : "Failed to parse CSV file",
-            });
-          }
-        }
-
-        await refreshLibrary();
-
-        if (failedUploads.length > 0) {
-          setError(
-            failedUploads
-              .map(({ fileName, reason }) => `${fileName}: ${reason}`)
-              .join(" | ")
+    try {
+      for (const file of files) {
+        try {
+          const positions = parseCSV(await file.text());
+          uploadedPortfolios.push(
+            await saveUploadedPortfolio({
+              sourceFileName: file.name,
+              positions,
+            })
           );
-        } else if (uploadedPortfolios.length === 0) {
-          setError("Select at least one Fidelity positions CSV.");
+        } catch (nextError) {
+          failedUploads.push({
+            fileName: file.name,
+            reason:
+              nextError instanceof Error
+                ? nextError.message
+                : "Failed to parse CSV file",
+          });
         }
-
-        return { uploadedPortfolios, failedUploads };
-      } finally {
-        setIsUploading(false);
       }
-    },
-    [refreshLibrary]
-  );
+
+      if (failedUploads.length > 0) {
+        setError(
+          failedUploads
+            .map(({ fileName, reason }) => `${fileName}: ${reason}`)
+            .join(" | ")
+        );
+      } else if (uploadedPortfolios.length === 0) {
+        setError("Select at least one Fidelity positions CSV.");
+      }
+
+      return { uploadedPortfolios, failedUploads };
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
 
   const removePortfolioById = useCallback(
     async (portfolioId: string) => {
