@@ -14,7 +14,10 @@ import {
   DESKTOP_TREE_MAP_LAYOUT,
   MOBILE_TREE_MAP_LAYOUT,
 } from "@/lib/portfolioLayout";
-import { updateStoredPortfolioName } from "@/lib/storage";
+import {
+  getStoredPortfolioSummary,
+  updateStoredPortfolioName,
+} from "@/lib/storage";
 import { parsePortfolioUrlState } from "@/lib/urlFilters";
 
 interface PortfolioDetailClientProps {
@@ -75,6 +78,11 @@ export function PortfolioDetailClient({
       : `Where's my money?`;
   }, [record.summary]);
 
+  const immediatePortfolioName = useMemo(
+    () => getStoredPortfolioSummary(portfolioId)?.name,
+    [portfolioId]
+  );
+
   const handleRenamePortfolio = useCallback(
     (id: string, name: string) => {
       updateStoredPortfolioName(id, name);
@@ -95,7 +103,7 @@ export function PortfolioDetailClient({
   } else if (!record.portfolioData) {
     mainContent = (
       <PortfolioLoadingState
-        portfolioName={record.summary?.name}
+        portfolioName={record.summary?.name ?? immediatePortfolioName}
         isMobile={isMobile}
         enableIntroAnimation={!record.restoredFromStorage}
         error={record.error}
