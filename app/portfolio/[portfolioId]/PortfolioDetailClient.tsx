@@ -105,7 +105,7 @@ export function PortfolioDetailClient({
       <PortfolioLoadingState
         portfolioName={record.summary?.name ?? immediatePortfolioName}
         isMobile={isMobile}
-        enableIntroAnimation={!record.restoredFromStorage}
+        enableIntroAnimation={false}
         error={record.error}
       />
     );

@@ -169,14 +169,20 @@ export function useStoredPortfolioRecord({
       return;
     }
 
-    lastLayoutModeRef.current = layoutMode;
-
     if (!positionsRef.current) {
+      lastLayoutModeRef.current = layoutMode;
       return;
     }
 
+    // useIsMobile often corrects after hydration; wait for the first /api/portfolio
+    // response before firing a layout refresh so we don't race duplicate fetches.
+    if (!portfolioData) {
+      return;
+    }
+
+    lastLayoutModeRef.current = layoutMode;
     void refreshPortfolioData(positionsRef.current, "/api/portfolio/refresh", false);
-  }, [layoutMode, refreshPortfolioData]);
+  }, [layoutMode, portfolioData, refreshPortfolioData]);
 
   useEffect(() => {
     if (!positions) {

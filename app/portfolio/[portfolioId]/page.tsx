@@ -32,10 +32,7 @@ function flattenSearchParams(
   return u.toString();
 }
 
-async function PortfolioDetailPageContent({
-  params,
-  searchParams,
-}: PageProps) {
+async function PortfolioDetailAsync({ params, searchParams }: PageProps) {
   const { portfolioId } = await params;
   const spRecord = await searchParams;
   const initialSearchParamsString = flattenSearchParams(spRecord);
@@ -54,8 +51,8 @@ async function PortfolioDetailPageContent({
 
 export default function PortfolioDetailPage(props: PageProps) {
   return (
-    <Suspense fallback={<DashboardSkeleton enableIntroAnimation={false} />}>
-      <PortfolioDetailPageContent {...props} />
+    <Suspense fallback={null}>
+      <PortfolioDetailAsync {...props} />
     </Suspense>
   );
 }

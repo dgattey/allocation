@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const { pushMock } = vi.hoisted(() => ({
   pushMock: vi.fn(),
@@ -48,18 +48,9 @@ vi.mock("@/hooks/usePortfolioLibrary", () => ({
 }));
 
 import Home from "../page";
-import { PendingUploadProvider } from "../contexts/PendingUploadContext";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
 const mockUsePortfolioLibrary = vi.mocked(usePortfolioLibrary);
-
-function renderWithProvider(ui: React.ReactElement) {
-  return render(
-    <PendingUploadProvider>
-      {ui}
-    </PendingUploadProvider>
-  );
-}
 
 describe("Home page", () => {
   beforeEach(() => {
@@ -87,7 +78,7 @@ describe("Home page", () => {
       renamePortfolio: vi.fn(),
     });
 
-    renderWithProvider(<Home />);
+    render(<Home />);
 
     expect(screen.getByText("WMM")).toBeInTheDocument();
     expect(screen.queryByText("Portfolio picker")).not.toBeInTheDocument();
@@ -95,24 +86,36 @@ describe("Home page", () => {
     expect(screen.getByTestId("portfolio-library-nav")).toHaveTextContent("alpha");
   });
 
-  it("navigates to uploading route immediately when files are selected", () => {
+  it("navigates to the new portfolio after upload completes", async () => {
     mockUsePortfolioLibrary.mockReturnValue({
       portfolios: [],
       isUploading: false,
       error: null,
       setError: vi.fn(),
       refreshLibrary: vi.fn(),
-      uploadFiles: vi.fn(),
+      uploadFiles: vi.fn().mockResolvedValue({
+        uploadedPortfolios: [
+          {
+            id: "new-portfolio",
+            name: "alpha",
+            sourceFileName: "alpha.csv",
+            uploadedAt: "2026-03-18T00:00:00.000Z",
+            lastViewedAt: "2026-03-18T00:00:00.000Z",
+            positionCount: 1,
+          },
+        ],
+        failedUploads: [],
+      }),
       removePortfolioById: vi.fn(),
       renamePortfolio: vi.fn(),
     });
 
-    renderWithProvider(<Home />);
+    render(<Home />);
     fireEvent.click(screen.getByRole("button", { name: "Upload files" }));
 
-    // Home navigates to /portfolio/uploading immediately; that route processes
-    // and redirects to the portfolio.
-    expect(pushMock).toHaveBeenCalledWith("/portfolio/uploading");
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith("/portfolio/new-portfolio");
+    });
   });
 
   it("omits the saved-files section when there are no uploaded portfolios", () => {
@@ -127,7 +130,7 @@ describe("Home page", () => {
       renamePortfolio: vi.fn(),
     });
 
-    renderWithProvider(<Home />);
+    render(<Home />);
 
     expect(screen.queryByTestId("portfolio-library-nav")).not.toBeInTheDocument();
   });
