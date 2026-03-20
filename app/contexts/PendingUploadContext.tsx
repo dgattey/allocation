@@ -47,6 +47,13 @@ export function PendingUploadProvider({
   const nextBatchIdRef = useRef(0);
 
   const setPendingFiles = useCallback((files: File[] | null) => {
+    // New drop from home: reset any leaked active batch (e.g. release skipped) so the
+    // next visit to /portfolio/uploading can claim again instead of returning "claimed".
+    if (files !== null && files.length > 0) {
+      activeBatchRef.current = null;
+      pipelineStartedForBatchIdRef.current = null;
+      setProcessing(false);
+    }
     pendingRef.current = files;
     setPendingFilesState(files);
   }, []);

@@ -1,7 +1,10 @@
-import { StrictMode } from "react";
+import { useLayoutEffect } from "react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, waitFor } from "@testing-library/react";
-import { PendingUploadProvider } from "@/app/contexts/PendingUploadContext";
+import {
+  PendingUploadProvider,
+  usePendingUpload,
+} from "@/app/contexts/PendingUploadContext";
 import type { StoredPortfolioSummary } from "@/lib/types";
 import UploadingPage from "../page";
 
@@ -36,6 +39,14 @@ function makeCsvFile(name: string) {
   return new File(["x"], name, { type: "text/csv" });
 }
 
+function PrimeUpload({ file, round }: { file: File; round: number }) {
+  const { setPendingFiles } = usePendingUpload();
+  useLayoutEffect(() => {
+    setPendingFiles([file]);
+  }, [file, round, setPendingFiles]);
+  return <UploadingPage key={round} />;
+}
+
 describe("UploadingPage", () => {
   beforeEach(() => {
     replaceMock.mockClear();
@@ -66,14 +77,24 @@ describe("UploadingPage", () => {
     expect(uploadFilesMock.mock.calls[0][0]).toEqual([file]);
   });
 
-  it("under React StrictMode calls uploadFiles once and still reaches the portfolio", async () => {
-    const file = makeCsvFile("beta.csv");
+  it("supports a second upload on the same provider after the first completes", async () => {
+    const file1 = makeCsvFile("one.csv");
+    const file2 = makeCsvFile("two.csv");
+    const summary2 = { ...uploadedSummary, id: "portfolio-two" };
 
-    render(
-      <PendingUploadProvider initialPendingFiles={[file]}>
-        <StrictMode>
-          <UploadingPage />
-        </StrictMode>
+    uploadFilesMock
+      .mockResolvedValueOnce({
+        uploadedPortfolios: [uploadedSummary],
+        failedUploads: [],
+      })
+      .mockResolvedValueOnce({
+        uploadedPortfolios: [summary2],
+        failedUploads: [],
+      });
+
+    const { rerender } = render(
+      <PendingUploadProvider>
+        <PrimeUpload file={file1} round={1} />
       </PendingUploadProvider>
     );
 
@@ -81,6 +102,19 @@ describe("UploadingPage", () => {
       expect(replaceMock).toHaveBeenCalledWith("/portfolio/test-portfolio-id");
     });
     expect(uploadFilesMock).toHaveBeenCalledTimes(1);
+
+    replaceMock.mockClear();
+
+    rerender(
+      <PendingUploadProvider>
+        <PrimeUpload file={file2} round={2} />
+      </PendingUploadProvider>
+    );
+
+    await waitFor(() => {
+      expect(replaceMock).toHaveBeenCalledWith("/portfolio/portfolio-two");
+    });
+    expect(uploadFilesMock).toHaveBeenCalledTimes(2);
   });
 
   it("sends bookmarked /portfolio/uploading with no pending files home", async () => {
