@@ -13,7 +13,7 @@ function siteOrigin(): string {
 }
 
 const siteDescription =
-  "What you own, where it sits—and how it fits together, clear enough to act on.";
+  "What you own, where it sits—and how it fits together.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
