@@ -8,12 +8,14 @@ export const socialOgImageContentType = "image/png";
 
 /** Shared by Open Graph and Twitter metadata routes — no request or portfolio data. */
 export const socialOgImageAlt =
-  "WMM — Where's my money? One clear view of what you own and how it fits together";
+  "WMM — Where\u2019s my money? One clear view of what you own and how it fits together";
 
-/** Logo is taller than the canvas so it bleeds top/bottom; pulled left so part is clipped. */
+/** Square logo larger than canvas height: flex-center bleeds top/bottom; clip column + negative margin pulls it left (Satori-safe vs absolute positioning). */
 const LOGO_PX = 668;
-const LOGO_LEFT = -278;
-const LOGO_TOP = Math.round((socialOgImageSize.height - LOGO_PX) / 2);
+/** Visible strip width for the logo before text starts. */
+const LOGO_CLIP_W = 352;
+/** Pull the image left so much of it sits off-canvas. */
+const LOGO_PULL_LEFT = 302;
 
 export async function createSocialOgImage(): Promise<ImageResponse> {
   const svg = await readFile(
@@ -28,37 +30,46 @@ export async function createSocialOgImage(): Promise<ImageResponse> {
         style={{
           width: "100%",
           height: "100%",
-          position: "relative",
+          display: "flex",
+          flexDirection: "row",
           overflow: "hidden",
           background: "linear-gradient(145deg, #fafafa 0%, #eef1f6 55%, #e8ecf4 100%)",
           fontFamily:
             'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders this to PNG */}
-        <img
-          src={iconSrc}
-          width={LOGO_PX}
-          height={LOGO_PX}
-          alt=""
-          style={{
-            position: "absolute",
-            left: LOGO_LEFT,
-            top: LOGO_TOP,
-            width: LOGO_PX,
-            height: LOGO_PX,
-          }}
-        />
         <div
           style={{
-            position: "relative",
-            zIndex: 1,
-            display: "flex",
+            width: LOGO_CLIP_W,
             height: "100%",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            overflow: "hidden",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders this to PNG */}
+          <img
+            src={iconSrc}
+            width={LOGO_PX}
+            height={LOGO_PX}
+            alt=""
+            style={{
+              marginLeft: -LOGO_PULL_LEFT,
+              flexShrink: 0,
+            }}
+          />
+        </div>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
             flexDirection: "column",
             justifyContent: "center",
             boxSizing: "border-box",
-            padding: "112px 80px 112px 378px",
+            minWidth: 0,
+            padding: "112px 80px 112px 40px",
             maxWidth: 900,
           }}
         >
