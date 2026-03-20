@@ -28,7 +28,7 @@
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-highlight: rgba(255, 255, 255, 0.5);
 
-  /* Skeleton — Material UI wave pattern (default theme): text @ 11% + action.hover mid */
+  /* Skeleton: text-tinted fill + subtle dark mid-stop for the wave */
   --skeleton-base: color-mix(in srgb, var(--text) 11%, transparent);
   --skeleton-wave-mid: rgba(0, 0, 0, 0.04);
 }
@@ -145,7 +145,7 @@ body {
   100% { background-color: transparent; }
 }
 
-/* === Skeleton — MUI-style wave (see @mui/material Skeleton, animation="wave") === */
+/* === Skeleton wave (gradient sweep, pause between loops) === */
 @keyframes skeleton-wave {
   0% {
     transform: translateX(-100%);
@@ -163,7 +163,7 @@ body {
   overflow: hidden;
   background-color: var(--skeleton-base);
   border-radius: 8px;
-  /* Safari compositing (MUI Skeleton workaround) */
+  /* Safari: mask improves ::after wave compositing */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
   mask-image: radial-gradient(white, black);
 }
