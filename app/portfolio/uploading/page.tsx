@@ -1,64 +1,75 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardSkeleton } from "@/app/components/skeletons";
 import { usePendingUpload } from "@/app/contexts/PendingUploadContext";
 import { usePortfolioLibrary } from "@/hooks/usePortfolioLibrary";
 
 /**
- * Survives React Strict Mode’s effect cleanup + remount and avoids re-running
- * the effect when `setProcessing(false)` fires (which must not be in the
- * effect dependency array, or a follow-up run sees no pending files and sends
- * the user home instead of to the new portfolio).
+ * One upload pipeline per navigation to this route. Survives React Strict Mode
+ * (effect runs twice across remounts; the first pass consumes pending files).
+ * Empty-file effect passes must not call `replace("/")` while that promise exists.
  */
-let uploadRouteSessionActive = false;
+let inFlightUpload: Promise<unknown> | null = null;
 
 export default function UploadingPage() {
   const router = useRouter();
   const { takePendingFiles, setProcessing } = usePendingUpload();
   const { uploadFiles, setError } = usePortfolioLibrary();
 
+  const routerRef = useRef(router);
+  const uploadFilesRef = useRef(uploadFiles);
+  const setErrorRef = useRef(setError);
+  const setProcessingRef = useRef(setProcessing);
+
+  useLayoutEffect(() => {
+    routerRef.current = router;
+    uploadFilesRef.current = uploadFiles;
+    setErrorRef.current = setError;
+    setProcessingRef.current = setProcessing;
+  });
+
   useEffect(() => {
     const files = takePendingFiles();
 
-    if (!files || files.length === 0) {
-      if (!uploadRouteSessionActive) {
-        router.replace("/");
+    if (!files?.length) {
+      if (!inFlightUpload) {
+        routerRef.current.replace("/");
       }
       return;
     }
 
-    uploadRouteSessionActive = true;
-
-    uploadFiles(files)
+    const uploadWork = uploadFilesRef.current(files)
       .then(({ uploadedPortfolios, failedUploads }) => {
         if (failedUploads.length > 0) {
-          setError(
+          setErrorRef.current(
             failedUploads
               .map(({ fileName, reason }) => `${fileName}: ${reason}`)
               .join(" | ")
           );
         } else if (uploadedPortfolios.length === 0) {
-          setError("Select at least one Fidelity positions CSV.");
+          setErrorRef.current("Select at least one Fidelity positions CSV.");
         }
 
         if (uploadedPortfolios.length > 0) {
-          router.replace(
+          routerRef.current.replace(
             `/portfolio/${uploadedPortfolios[uploadedPortfolios.length - 1].id}`
           );
         } else {
-          router.replace("/");
+          routerRef.current.replace("/");
         }
       })
       .catch(() => {
-        router.replace("/");
-      })
-      .finally(() => {
-        uploadRouteSessionActive = false;
-        setProcessing(false);
+        routerRef.current.replace("/");
       });
-  }, [takePendingFiles, setProcessing, uploadFiles, setError, router]);
+
+    const withCleanup = uploadWork.finally(() => {
+      inFlightUpload = null;
+      setProcessingRef.current(false);
+    });
+    inFlightUpload = withCleanup;
+  }, [takePendingFiles]);
 
   return <DashboardSkeleton enableIntroAnimation={false} />;
 }
